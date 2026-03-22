@@ -16,9 +16,12 @@
         Blue: 240,
         Purple: 270,
         Pink: 330,
+        Maroon: 350,
+        Navy: 220,
+        Brown: 25,
     };
 
-    const NEUTRAL_COLORS = ["Black", "White", "Gray", "Unknown"];
+    const NEUTRAL_COLORS = ["Black", "White", "Gray", "Beige", "Cream", "Unknown"];
 
     // Category classification for outfit building
     const TOPS = ["Shirt", "Top/T-Shirt"];
@@ -84,10 +87,10 @@
     // SEASONAL COLOR PALETTES
     // ========================================
     const SEASON_COLORS = {
-        spring: { preferred: ["Pink", "Green", "Yellow", "Cyan"], avoid: [] },
-        summer: { preferred: ["Blue", "Cyan", "White", "Yellow"], avoid: [] },
-        autumn: { preferred: ["Orange", "Red", "Brown", "Green"], avoid: [] },
-        winter: { preferred: ["Black", "Gray", "Blue", "Red", "White"], avoid: [] },
+        spring: { preferred: ["Pink", "Green", "Yellow", "Cyan", "Cream", "Beige"], avoid: [] },
+        summer: { preferred: ["Blue", "Cyan", "White", "Yellow", "Navy"], avoid: [] },
+        autumn: { preferred: ["Orange", "Red", "Brown", "Green", "Maroon", "Beige"], avoid: [] },
+        winter: { preferred: ["Black", "Gray", "Blue", "Red", "White", "Navy", "Maroon"], avoid: [] },
     };
 
     // ========================================

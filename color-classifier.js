@@ -31,19 +31,53 @@
     return `#${hex(r)}${hex(g)}${hex(b)}`;
   }
 
-  function hueToName(h) {
-    // Wrap hue into [0,360)
+  // Classify color using hue, saturation, and lightness together for accuracy
+  function classifyColor(h, s, l) {
     const hue = ((h % 360) + 360) % 360;
-    // Improved hue ranges for better color accuracy
-    if (hue >= 350 || hue < 10) return 'Red';
+
+    // --- Achromatic / near-achromatic (handled separately by caller for very low s) ---
+
+    // --- Dark colors: lightness < 0.22 ---
+    if (l < 0.22) {
+      // Very dark — but if saturation is notable, identify the hue
+      if (s >= 0.15) {
+        if (hue >= 340 || hue < 20) return 'Maroon';
+        if (hue >= 180 && hue < 260) return 'Navy';
+        if (hue >= 260 && hue < 310) return 'Purple';
+        if (hue >= 60 && hue < 160) return 'Green';
+      }
+      return 'Black';
+    }
+
+    // --- Light / pastel colors: lightness > 0.82 ---
+    if (l > 0.82) {
+      if (s < 0.15) return 'White';
+      // Light pastels with some saturation
+      if (hue >= 20 && hue < 55 && s < 0.45) return 'Cream';
+      if (hue >= 280 || hue < 10) return 'Pink';
+      if (hue >= 180 && hue < 260) return 'Blue';
+      if (hue >= 60 && hue < 150) return 'Green';
+      if (hue >= 10 && hue < 50) return 'Beige';
+    }
+
+    // --- Brown detection: low-mid saturation, warm hues, low-mid lightness ---
+    if (hue >= 10 && hue < 45 && l < 0.50 && s < 0.65) return 'Brown';
+
+    // --- Standard hue-based classification ---
+    if (hue >= 345 || hue < 10) return 'Red';
     if (hue >= 10 && hue < 30) return 'Orange';
-    if (hue >= 30 && hue < 60) return 'Yellow';
-    if (hue >= 60 && hue < 150) return 'Green';
+    if (hue >= 30 && hue < 55) return 'Yellow';
+    if (hue >= 55 && hue < 150) return 'Green';
     if (hue >= 150 && hue < 180) return 'Cyan';
-    if (hue >= 180 && hue < 240) return 'Blue';
-    if (hue >= 240 && hue < 280) return 'Purple';
-    if (hue >= 280 && hue < 350) return 'Pink';
+    if (hue >= 180 && hue < 245) return 'Blue';
+    if (hue >= 245 && hue < 280) return 'Purple';
+    if (hue >= 280 && hue < 345) return 'Pink';
     return 'Red'; // fallback
+  }
+
+  // Legacy wrapper — kept for any external callers
+  function hueToName(h) {
+    return classifyColor(h, 1, 0.5);
   }
 
   async function getDominantColorFromDataURL(dataURL) {
@@ -124,11 +158,9 @@
               const lightnessWeight = 1 - Math.abs(l - 0.5) * 0.8; // More lenient - allow light and dark colors
               const colorW = saturationWeight * Math.max(0.3, lightnessWeight) * (0.5 + 0.5 * centerW);
 
-              // Lower chroma threshold to better detect subtle colors
-              // Only classify as grayscale if saturation is very low
-              if (chroma < 0.05) {
-                // True grayscale (very low saturation)
-                const grayW = 0.1 * (0.4 + 0.6 * centerW); // Slightly higher weight for grays
+              // Grayscale detection — only truly desaturated pixels
+              if (chroma < 0.08) {
+                const grayW = 0.12 * (0.4 + 0.6 * centerW);
                 if (l > 0.85) bump('White', r, g, b, grayW);
                 else if (l < 0.15) bump('Black', r, g, b, grayW);
                 else bump('Gray', r, g, b, grayW);
@@ -136,8 +168,8 @@
                 continue;
               }
 
-              // For colors with any saturation, use hue-based classification
-              const name = hueToName(h);
+              // Full HSL-aware classification (catches Brown, Navy, Maroon, Beige, etc.)
+              const name = classifyColor(h, s, l);
               bump(name, r, g, b, colorW);
               kept++;
           }
