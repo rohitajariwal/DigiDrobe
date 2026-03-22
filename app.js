@@ -1378,7 +1378,7 @@ if (noteEl) noteEl.value = outfit.note || '';
             return;
         }
 
-        const outfits = RE.getDailyRecommendations(items, { count: 3 });
+        const outfits = RE.getDailyRecommendations(items, { count: 5 });
         if (outfits.length === 0) {
             grid.innerHTML = '<p class="tiny muted">Add more variety to unlock recommendations.</p>';
             return;
