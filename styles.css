@@ -255,6 +255,14 @@ body {
     font-weight: 700;
 }
 
+#zoomResetBtn {
+    width: auto;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .canvas-bg-select {
     width: auto;
     padding: 4px 10px;
@@ -446,6 +454,38 @@ button {
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-main);
     transition: var(--transition);
+}
+
+/* Styled file input */
+input[type="file"] {
+    position: relative;
+    padding: 10px 14px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+input[type="file"]::file-selector-button {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-right: 12px;
+    transition: var(--transition);
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: var(--accent-dark);
+    color: var(--text-main);
+}
+
+select option {
+    background: var(--bg-secondary);
+    color: var(--text-main);
 }
 
 input:focus,
@@ -913,6 +953,7 @@ body.auth-page {
     overflow-y: auto !important;
     height: auto !important;
     min-height: 100vh;
+    background: var(--bg-primary) !important;
 }
 
 /* ---- Nav Bar ---- */
@@ -1262,6 +1303,15 @@ body.auth-page {
     width: auto;
     padding: 8px 14px;
     font-size: 13px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+}
+
+.dash-reco-controls select option {
+    background: var(--bg-secondary);
+    color: var(--text-main);
 }
 
 .dash-reco-controls .btn-main {
