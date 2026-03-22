@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>DigiDrobe — Studio</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+    <!-- ================= TOP BAR ================= -->
+    <div id="topbar">
+        <a id="userEmail" class="topbar-mail muted" href="profile.html">
+            Not logged in
+        </a>
+        <div class="topbar-right">
+            <span id="modelStatus" class="muted">Model: checking…</span>
+            <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
+        </div>
+    </div>
+
+    <!-- ================= MAIN CONTAINER ================= -->
+    <div class="container">
+
+        <!-- ========== LEFT SIDEBAR ========== -->
+        <aside class="left-sidebar">
+
+            <section class="card">
+                <p class="tiny muted">Welcome back</p>
+                <h3 id="profileGreeting">Hi there!</h3>
+                <p class="muted">Curate today's look from your wardrobe.</p>
+                <span id="wardrobeCount" class="tiny muted">0 items</span>
+            </section>
+
+            <section class="card">
+                <label class="muted">Upload clothes</label>
+                <input id="fileInput" type="file" accept="image/*" multiple />
+                <p class="tiny muted">Upload images — classifier will label (if model present)</p>
+            </section>
+
+            <!-- ===== WARDROBE (CRITICAL FIX) ===== -->
+            <section class="card">
+                <h3>Your wardrobe</h3>
+
+                <label class="tiny muted">Filter by category</label>
+                <select id="categoryFilter">
+                    <option value="all">All categories</option>
+                </select>
+
+                <label class="tiny muted">Filter by color</label>
+                <select id="colorFilter">
+                    <option value="all">All colors</option>
+                </select>
+
+                <!-- THIS ID IS REQUIRED -->
+                <div id="wardrobeList" class="list"></div>
+            </section>
+
+        </aside>
+
+        <!-- ========== MIDDLE: FLAT-LAY STYLING CANVAS ========== -->
+        <main class="middle-section">
+            <div id="stylingCanvas" class="styling-canvas">
+                <div class="canvas-header">
+                    <h3>Style Your Outfit</h3>
+                    <div class="canvas-actions">
+                        <button id="clearOutfitBtn" class="btn-ghost tiny" type="button">Clear All</button>
+                        <button id="saveOutfitBtn" class="btn-main tiny" type="button">Save Outfit</button>
+                    </div>
+                    <div class="outfit-note-wrapper">
+    <textarea
+        id="outfitNote"
+        placeholder="Add outfit details (occasion, styling notes...)"
+        rows="3">
+    </textarea>
+</div>
+
+                </div>
+                
+                <!-- Free-form 2D Canvas -->
+                <div id="flatLayCanvas" class="flat-lay-canvas">
+                    <div class="canvas-empty-state">
+                        <p>Drag clothing items from your wardrobe to create your outfit</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========== RIGHT SIDEBAR ========== -->
+        <aside class="right-sidebar">
+
+            <section class="card">
+                <label class="muted">Import from product image URL</label>
+                <input
+  type="text"
+  id="productUrl"
+  placeholder="Paste product image URL"
+>
+<small class="hint">
+  Tip: Open product → right-click on image → “Copy image address”
+</small>
+
+                <button id="importProductBtn" class="btn-main" type="button">
+                    Import product
+                </button>
+                <div id="importMsg" class="tiny muted"></div>
+            </section>
+
+            <section class="card">
+                <h3>Saved Outfits</h3>
+                <div id="savedOutfitsList" class="saved-outfits-list">
+                    <p class="tiny muted">No saved outfits yet. Create an outfit and click "Save Outfit" to save it here.</p>
+                </div>
+            </section>
+
+        </aside>
+    </div>
+
+    <!-- ================= SCRIPTS (ORDER MATTERS) ================= -->
+
+    <!-- TF / TM -->
+    <script src="libs/tf.min.js"></script>
+    <script src="libs/teachablemachine-image.min.js"></script>
+
+
+
+    <!-- ================= INIT ================= -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // show user
+            const user = localStorage.getItem("currentUser");
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+            document.getElementById("userEmail").textContent = user;
+
+            // logout
+            document.getElementById("logoutBtn").onclick = () => {
+                localStorage.removeItem("currentUser");
+                location.href = "login.html";
+            };
+        });
+    </script>
+<div id="floatingToolbar" class="floating-toolbar hidden">
+  <button data-action="front" title="Bring forward">⬆</button>
+  <button data-action="back" title="Send backward">⬇</button>
+  <button data-action="remove" title="Remove">🗑</button>
+</div>
+
+<script src="ml-classifier.js"></script>
+<script src="local-db-plain.js"></script>
+<script src="color-classifier.js"></script>
+<script src="cloth-extractor.js"></script>
+<script src="product-importer.js"></script>
+<script src="app.js"></script>
+
+
+
+</body>
+</html>

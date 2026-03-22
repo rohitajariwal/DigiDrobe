@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>DigiDrobe — Profile</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="profile-body">
+
+    <header class="profile-header">
+        <div>
+            <p class="tiny muted">Account center</p>
+            <h1 class="brand">DigiDrobe</h1>
+        </div>
+        <div class="topbar-right">
+            <a class="btn-ghost" href="main.html">← Back to studio</a>
+            <button id="logoutProfile" class="btn-ghost" type="button">Logout</button>
+        </div>
+    </header>
+
+    <div class="profile-shell">
+        <div class="profile-main">
+
+            <section class="profile-info">
+                <div class="card">
+                    <div class="profile-hero">
+                        <div id="profileAvatarLg" class="profile-avatar-lg">DD</div>
+                        <div class="profile-meta">
+                            <h2 id="profileName">Your name</h2>
+                            <p id="profileEmail">you@example.com</p>
+                            <p id="profileMeasurements" class="small muted">Measurements: —</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="profile-stats-grid">
+                        <div class="stat-card">
+                            <span>Wardrobe</span>
+                            <strong id="profileWardrobeCount">0 items</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Categories</span>
+                            <strong id="profileCategoryCount">0</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Member since</span>
+                            <strong id="profileMemberSince">—</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Account details</h3>
+                    <div class="profile-details">
+                        <div class="profile-detail">
+                            <span>Full name</span>
+                            <strong id="detailFullName">—</strong>
+                        </div>
+                        <div class="profile-detail">
+                            <span>Email</span>
+                            <strong id="detailEmail">—</strong>
+                        </div>
+                        <div class="profile-detail">
+                            <span>Measurements</span>
+                            <strong id="detailMeasurements">—</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-headline">
+                        <h3>Body Measurements</h3>
+                        <button id="editMeasurementsBtn" class="btn-ghost tiny" type="button">Edit</button>
+                    </div>
+                    <p class="small muted">Enter your body measurements for personalized recommendations.</p>
+                    <div id="measurementsDisplay" class="measurements-display">
+                        <div class="profile-details">
+                            <div class="profile-detail">
+                                <span>Height</span>
+                                <strong id="displayHeight">—</strong>
+                            </div>
+                            <div class="profile-detail">
+                                <span>Chest/Bust</span>
+                                <strong id="displayChest">—</strong>
+                            </div>
+                            <div class="profile-detail">
+                                <span>Waist</span>
+                                <strong id="displayWaist">—</strong>
+                            </div>
+                            <div class="profile-detail">
+                                <span>Hips</span>
+                                <strong id="displayHips">—</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="measurementsForm" class="measurements-form hidden">
+                        <form id="measurementsFormElement">
+                            <div class="form-row">
+                                <label for="heightInput">Height (cm)</label>
+                                <input type="number" id="heightInput" min="100" max="250" step="0.5" placeholder="170">
+                            </div>
+                            <div class="form-row">
+                                <label for="chestInput">Chest/Bust (cm)</label>
+                                <input type="number" id="chestInput" min="50" max="200" step="0.5" placeholder="90">
+                            </div>
+                            <div class="form-row">
+                                <label for="waistInput">Waist (cm)</label>
+                                <input type="number" id="waistInput" min="50" max="200" step="0.5" placeholder="72">
+                            </div>
+                            <div class="form-row">
+                                <label for="hipsInput">Hips (cm)</label>
+                                <input type="number" id="hipsInput" min="50" max="200" step="0.5" placeholder="95">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-ghost">Save</button>
+                                <button type="button" id="cancelMeasurementsBtn" class="btn-ghost">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section class="profile-content">
+                <div class="card profile-filter">
+                    <div class="card-headline">
+                        <h3>Wardrobe filter</h3>
+                        <button id="profileClearFilter" class="btn-ghost tiny hidden" type="button">Reset</button>
+                    </div>
+                    <p class="small muted">Sort through everything you’ve uploaded — pick any category below.</p>
+                    <div class="filter-row">
+                        <label class="small muted" for="profileFilter">Category</label>
+                        <select id="profileFilter" class="filter-select">
+                            <option value="">All categories</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card profile-wardrobe">
+                    <div class="card-headline">
+                        <h3>Your wardrobe gallery</h3>
+                        <span id="profileFilterTag" class="small muted"></span>
+                    </div>
+                    <div id="profileWardrobe" class="wardrobe-grid">
+                        <div class="empty-state">No clothes to show yet.</div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="local-db-plain.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,148 @@
+<!-- <!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="auth-box">
+        <h2>Login</h2>
+
+        <form id="loginForm">
+            <input id="email" type="email" placeholder="Email" required>
+            <input id="password" type="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <p><a href="signup.html">Create new account</a></p>
+        <p id="msg"></p>
+    </div>
+
+    <script src="local-db-plain.js"></script>
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", e => {
+            e.preventDefault();
+
+            const ok = DB.login(email.value, password.value);
+            if (!ok) {
+                msg.textContent = "Incorrect email or password";
+                msg.style.color = "red";
+                return;
+            }
+
+            msg.textContent = "Login successful!";
+            msg.style.color = "lightgreen";
+
+            setTimeout(() => location.href = "main.html", 700);
+        });
+    </script>
+</body>
+
+</html> -->
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DigiDrobe — Login</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="auth-page">
+
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-card">
+                <h1 class="brand">DigiDrobe</h1>
+                <p class="login-title">Welcome back — sign in</p>
+
+                <form id="loginForm" autocomplete="off">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" placeholder="you@example.com" required>
+
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" placeholder="password" required>
+
+                    <div class="login-row">
+                        <label class="remember"><input type="checkbox" id="rememberMe"> Remember</label>
+                        <a class="forgot" href="#">Forgot?</a>
+                    </div>
+
+                    <button id="loginBtn" class="btn-auth" type="submit">Log In</button>
+
+                    <div id="msg" class="msg"></div>
+
+                    <p class="auth-small">New here? <a href="signup.html">Create an account</a></p>
+                </form>
+            </div>
+        </div>
+
+        <div class="login-right">
+            <!-- subtle right illustration / mood board -->
+            <div class="right-illustration">
+                <img src="assets/pexels-serra-nur-cevikdal-2147703100-32341088.jpg" alt="Boutique storefront" class="illustration">
+            </div>
+        </div>
+    </div>
+
+    <!-- local DB utility must be loaded for login functions -->
+    <script src="local-db-plain.js"></script>
+    <script>
+        // login logic (calls local-db-plain.js functions)
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const rawEmail = document.getElementById('email').value;
+            const email = (window.DB && typeof DB.normalizeEmail === 'function') ? DB.normalizeEmail(rawEmail) : (rawEmail || "").trim();
+            const password = document.getElementById('password').value;
+            const msgEl = document.getElementById('msg');
+
+            // Email validation (show a clear message instead of generic "invalid password")
+            if (window.DB && typeof DB.isValidEmail === 'function') {
+                if (!DB.isValidEmail(email)) {
+                    msgEl.textContent = 'Please enter a valid email address.';
+                    msgEl.style.color = '#ff4b5c';
+                    return;
+                }
+            }
+
+            // Use DB.login from local-db-plain.js
+            let ok = false;
+            try {
+                if (window.DB && typeof DB.login === 'function') {
+                    ok = DB.login(email, password);
+                } else if (typeof loginUser === 'function') {
+                    ok = loginUser(email, password);
+                } else {
+                    // Fallback: check users array directly
+                    const users = JSON.parse(localStorage.getItem('users') || '[]');
+                    const u = users.find(x => x.email === email && x.password === password);
+                    if (u) {
+                        localStorage.setItem('currentUser', email);
+                        ok = true;
+                    }
+                }
+            } catch (err) {
+                console.error('login helper error', err);
+            }
+
+            if (!ok) {
+                msgEl.textContent = (window.DB && DB.lastError) ? DB.lastError : 'Invalid email or password';
+                msgEl.style.color = '#ff4b5c';
+                return;
+            }
+
+            // success — persist user & open main
+            localStorage.setItem('currentUser', email);
+            msgEl.textContent = 'Login successful. Redirecting…';
+            msgEl.style.color = '#540863';
+            setTimeout(() => window.location.href = 'main.html', 450);
+        });
+    </script>
+</body>
+
+</html>
