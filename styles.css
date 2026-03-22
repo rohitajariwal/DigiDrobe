@@ -1636,6 +1636,8 @@ body.auth-page {
 .profile-body {
     overflow-y: auto !important;
     height: auto !important;
+    min-height: 100vh;
+    background: var(--bg-primary) !important;
 }
 
 .profile-shell {
@@ -1833,6 +1835,103 @@ body.auth-page {
     padding: 40px 20px;
     color: var(--muted);
     font-size: 14px;
+}
+
+/* Profile Photo Upload */
+.profile-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar-lg {
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-avatar-lg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.avatar-upload-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    border-radius: 0 0 50% 50%;
+    font-size: 11px;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.profile-avatar-wrapper:hover .avatar-upload-overlay {
+    opacity: 1;
+}
+
+#avatarFileInput {
+    display: none;
+}
+
+/* Profile wardrobe item inline editing */
+.wardrobe-item .wardrobe-edit-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.wardrobe-item .edit-icon-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 10px;
+    padding: 2px 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.wardrobe-item .edit-icon-btn:hover {
+    opacity: 1;
+    color: var(--accent);
+}
+
+.wardrobe-item .inline-edit-select {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 11px;
+    padding: 3px 6px;
+    max-width: 110px;
+    cursor: pointer;
+}
+
+.wardrobe-item .inline-edit-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.wardrobe-item .color-dot-sm {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 3px;
+    vertical-align: middle;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 900px) {

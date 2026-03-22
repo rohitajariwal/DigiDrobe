@@ -29,6 +29,18 @@
     const displayChest = document.getElementById("displayChest");
     const displayWaist = document.getElementById("displayWaist");
     const displayHips = document.getElementById("displayHips");
+    const avatarFileInput = document.getElementById("avatarFileInput");
+
+    const CLOTHING_CATEGORIES = ['Shirt', 'Top/T-Shirt', 'Trouser/Jeans', 'Skirt', 'Jacket', 'Dress'];
+    const COLOR_OPTIONS = ['Red', 'Orange', 'Yellow', 'Green', 'Cyan', 'Blue', 'Purple', 'Pink', 'Brown', 'Navy', 'Maroon', 'Beige', 'Cream', 'Gray', 'Black', 'White', 'Unknown'];
+    const COLOR_MAP = {
+        'Red': '#E74C3C', 'Orange': '#E67E22', 'Yellow': '#F1C40F',
+        'Green': '#27AE60', 'Cyan': '#1ABC9C', 'Blue': '#3498DB',
+        'Purple': '#9B59B6', 'Pink': '#E91E90', 'Brown': '#8B4513',
+        'Navy': '#1B2A4A', 'Maroon': '#800020', 'Beige': '#D4B896',
+        'Cream': '#FFFDD0', 'Gray': '#808080',
+        'Black': '#000000', 'White': '#FFFFFF', 'Unknown': '#808080'
+    };
 
     let userInfo = null;
     let wardrobeCache = [];
@@ -86,14 +98,11 @@
     function parseMeasurements(measurementsStr) {
         if (!measurementsStr) return null;
         try {
-            // Try to parse as JSON first
             const parsed = JSON.parse(measurementsStr);
             if (typeof parsed === 'object' && parsed !== null) {
                 return parsed;
             }
         } catch (e) {
-            // If not JSON, try to parse old text format
-            // Format: "height: 170cm; chest: 90cm; waist: 72cm; hips: 95cm"
             const parts = measurementsStr.split(';');
             const result = {};
             parts.forEach(part => {
@@ -122,19 +131,73 @@
         return parts.length > 0 ? parts.join('; ') : "Not provided";
     }
 
+    /* ---- Profile Photo ---- */
+
+    function loadProfilePhoto() {
+        const photoData = localStorage.getItem("profilePhoto_" + currentUser);
+        if (photoData && profileAvatarLg) {
+            profileAvatarLg.innerHTML = `<img src="${photoData}" alt="Profile photo">`;
+        }
+    }
+
+    function initProfilePhoto() {
+        avatarFileInput?.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith("image/")) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Resize to 200x200 for storage efficiency
+                    const canvas = document.createElement("canvas");
+                    const size = 200;
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext("2d");
+
+                    // Center-crop the image to a square
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+
+                    const dataURL = canvas.toDataURL("image/jpeg", 0.85);
+                    localStorage.setItem("profilePhoto_" + currentUser, dataURL);
+
+                    if (profileAvatarLg) {
+                        profileAvatarLg.innerHTML = `<img src="${dataURL}" alt="Profile photo">`;
+                    }
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /* ---- Hydrate Profile ---- */
+
     function hydrateProfile() {
         const name = getDisplayName();
         const measurementsObj = parseMeasurements(userInfo?.measurements);
         const measurements = formatMeasurements(measurementsObj);
-        
+
         profileName && (profileName.textContent = name);
         profileEmail && (profileEmail.textContent = currentUser);
         profileMeasurements && (profileMeasurements.textContent = `Measurements: ${measurements}`);
         detailFullName && (detailFullName.textContent = userInfo?.name || name);
         detailEmail && (detailEmail.textContent = currentUser);
         detailMeasurements && (detailMeasurements.textContent = measurements);
-        profileAvatarLg && (profileAvatarLg.textContent = getInitials());
         profileMemberSince && (profileMemberSince.textContent = formatDate(userInfo?.createdAt));
+
+        // Load profile photo or show initials
+        const photoData = localStorage.getItem("profilePhoto_" + currentUser);
+        if (photoData && profileAvatarLg) {
+            profileAvatarLg.innerHTML = `<img src="${photoData}" alt="Profile photo">`;
+        } else if (profileAvatarLg) {
+            profileAvatarLg.textContent = getInitials();
+        }
 
         // Update measurements display
         if (measurementsObj) {
@@ -157,14 +220,68 @@
         profileCategoryCount && (profileCategoryCount.textContent = categories.size);
     }
 
+    /* ---- Wardrobe Item Update Helpers ---- */
+
+    function updateItemInStorage(itemId, updates) {
+        const key = "wardrobe_" + currentUser;
+        const items = JSON.parse(localStorage.getItem(key) || "[]");
+        const item = items.find(it => it.id === itemId);
+        if (item) {
+            Object.assign(item, updates);
+            localStorage.setItem(key, JSON.stringify(items));
+            wardrobeCache = items;
+        }
+    }
+
+    function handleCategoryChange(itemId, newCategory) {
+        updateItemInStorage(itemId, { category: newCategory });
+        updateStats();
+        updateFilterOptions(wardrobeCache);
+        renderWardrobe();
+    }
+
+    function handleColorChange(itemId, newColor) {
+        const newColorHex = COLOR_MAP[newColor] || '#808080';
+        updateItemInStorage(itemId, { color: newColor, colorHex: newColorHex });
+        renderWardrobe();
+    }
+
+    /* ---- Build Wardrobe Card with Inline Editing ---- */
+
     function buildWardrobeCard(item) {
+        const displayCategory = item.category || "Uncategorized";
+        const displayColor = item.color || "Unknown";
+        const colorHex = item.colorHex || COLOR_MAP[displayColor] || '#808080';
+
+        const categoryOptions = CLOTHING_CATEGORIES.map(cat =>
+            `<option value="${cat}" ${cat === displayCategory ? 'selected' : ''}>${cat}</option>`
+        ).join('');
+
+        const colorOptions = COLOR_OPTIONS.map(c =>
+            `<option value="${c}" ${c === displayColor ? 'selected' : ''}>${c}</option>`
+        ).join('');
+
         return `
-            <div class="wardrobe-item">
+            <div class="wardrobe-item" data-item-id="${item.id}">
                 <button class="wardrobe-delete" type="button" data-id="${item.id}" aria-label="Remove ${item.name}">×</button>
                 <img src="${item.dataURL}" alt="${item.name}">
                 <div class="wardrobe-meta">
-                    <strong>${item.name}</strong>
-                    <div class="small">${item.category || "Uncategorized"}</div>
+                    <strong>${item.name || 'Unnamed'}</strong>
+                    <div class="wardrobe-edit-row">
+                        <span class="category-label" title="Click to change type">${displayCategory}</span>
+                        <button class="edit-icon-btn edit-category-btn" type="button" title="Edit type">&#9998;</button>
+                        <select class="inline-edit-select category-select" style="display:none;" data-id="${item.id}">
+                            ${categoryOptions}
+                        </select>
+                    </div>
+                    <div class="wardrobe-edit-row">
+                        <span class="color-dot-sm" style="background:${colorHex}"></span>
+                        <span class="color-label" title="Click to change color">${displayColor}</span>
+                        <button class="edit-icon-btn edit-color-btn" type="button" title="Edit color">&#9998;</button>
+                        <select class="inline-edit-select color-select" style="display:none;" data-id="${item.id}">
+                            ${colorOptions}
+                        </select>
+                    </div>
                 </div>
             </div>
         `;
@@ -207,11 +324,67 @@
         }
 
         wardrobeGrid.innerHTML = filtered.map(buildWardrobeCard).join("");
+
+        // Bind delete buttons
         wardrobeGrid.querySelectorAll(".wardrobe-delete").forEach((btn) => {
             btn.addEventListener("click", (event) => {
                 event.stopPropagation();
                 const id = btn.getAttribute("data-id");
                 removeWardrobeItem(id);
+            });
+        });
+
+        // Bind category edit buttons and selects
+        wardrobeGrid.querySelectorAll(".edit-category-btn").forEach((btn) => {
+            const item = btn.closest(".wardrobe-item");
+            const label = item.querySelector(".category-label");
+            const select = item.querySelector(".category-select");
+
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                label.style.display = "none";
+                btn.style.display = "none";
+                select.style.display = "inline-block";
+                setTimeout(() => select.focus(), 10);
+            });
+
+            select.addEventListener("change", (e) => {
+                e.stopPropagation();
+                handleCategoryChange(select.dataset.id, select.value);
+            });
+
+            select.addEventListener("blur", () => {
+                select.style.display = "none";
+                label.style.display = "inline";
+                btn.style.display = "";
+            });
+        });
+
+        // Bind color edit buttons and selects
+        wardrobeGrid.querySelectorAll(".edit-color-btn").forEach((btn) => {
+            const item = btn.closest(".wardrobe-item");
+            const label = item.querySelector(".color-label");
+            const select = item.querySelector(".color-select");
+
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                label.style.display = "none";
+                btn.style.display = "none";
+                item.querySelector(".color-dot-sm").style.display = "none";
+                select.style.display = "inline-block";
+                setTimeout(() => select.focus(), 10);
+            });
+
+            select.addEventListener("change", (e) => {
+                e.stopPropagation();
+                handleColorChange(select.dataset.id, select.value);
+            });
+
+            select.addEventListener("blur", () => {
+                select.style.display = "none";
+                label.style.display = "inline";
+                btn.style.display = "";
+                item.querySelector(".color-dot-sm").style.display = "";
             });
         });
     }
@@ -276,16 +449,14 @@
                 hips: parseFloat(document.getElementById("hipsInput").value) || null
             };
 
-            // Remove null values
             Object.keys(measurementsObj).forEach(key => {
                 if (measurementsObj[key] === null) delete measurementsObj[key];
             });
 
-            const measurementsStr = Object.keys(measurementsObj).length > 0 
-                ? JSON.stringify(measurementsObj) 
+            const measurementsStr = Object.keys(measurementsObj).length > 0
+                ? JSON.stringify(measurementsObj)
                 : "";
 
-            // Update user in database
             try {
                 const users = JSON.parse(localStorage.getItem("users") || "[]");
                 const userIndex = users.findIndex(u => u.email === currentUser);
@@ -296,8 +467,6 @@
                     hydrateProfile();
                     measurementsDisplay.classList.remove("hidden");
                     measurementsForm.classList.add("hidden");
-                    
-                    // Trigger measurement update flag for main page
                     localStorage.setItem("measurementsUpdated", "true");
                 }
             } catch (err) {
@@ -310,6 +479,7 @@
     function init() {
         fetchUser();
         hydrateProfile();
+        initProfilePhoto();
         wardrobeCache = getWardrobe();
         updateStats();
         updateFilterOptions(wardrobeCache);
@@ -320,4 +490,3 @@
 
     init();
 })();
-

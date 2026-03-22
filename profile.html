@@ -28,7 +28,11 @@
             <section class="profile-info">
                 <div class="card">
                     <div class="profile-hero">
-                        <div id="profileAvatarLg" class="profile-avatar-lg">DD</div>
+                        <div class="profile-avatar-wrapper">
+                            <div id="profileAvatarLg" class="profile-avatar-lg">DD</div>
+                            <label for="avatarFileInput" class="avatar-upload-overlay">Upload</label>
+                            <input type="file" id="avatarFileInput" accept="image/*" />
+                        </div>
                         <div class="profile-meta">
                             <h2 id="profileName">Your name</h2>
                             <p id="profileEmail">you@example.com</p>
