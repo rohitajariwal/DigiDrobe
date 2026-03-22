@@ -35,6 +35,9 @@
         let dragOffset = { x: 0, y: 0 };
 
         let selectedCanvasItem = null;
+        let canvasZoom = 1;
+        let canvasPanX = 0;
+        let canvasPanY = 0;
 const floatingToolbar = document.getElementById('floatingToolbar');
 
 
@@ -389,7 +392,10 @@ const canvasItem = {
   x: x || 50,
   y: y || 50,
   scale: 1,
-  zIndex: maxZ + 1   // always comes on top initially
+  rotation: 0,
+  flipX: false,
+  flipY: false,
+  zIndex: maxZ + 1
 };
 
 
@@ -433,9 +439,13 @@ const canvasItem = {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'canvas-item';
                 const scale = canvasItem.scale || 1;
-                itemEl.style.left = (canvasItem.x * scale) + 'px';
-                itemEl.style.top = (canvasItem.y * scale) + 'px';
-                itemEl.style.transform = `scale(${scale})`;
+                const rotation = canvasItem.rotation || 0;
+                const scaleX = canvasItem.flipX ? -scale : scale;
+                const scaleY = canvasItem.flipY ? -scale : scale;
+                itemEl.style.left = canvasItem.x + 'px';
+                itemEl.style.top = canvasItem.y + 'px';
+                itemEl.style.transform = `scale(${scaleX}, ${scaleY}) rotate(${rotation}deg)`;
+                itemEl.style.transformOrigin = 'center center';
                 itemEl.style.zIndex = canvasItem.zIndex || 1;
                 itemEl.setAttribute('data-item-id', canvasItem.id);
                 
@@ -479,6 +489,10 @@ itemEl.appendChild(resizeHandle);
 
         function selectCanvasItem(canvasItem, itemEl) {
   selectedCanvasItem = canvasItem;
+
+  // Highlight selected item
+  flatLayCanvas.querySelectorAll('.canvas-item').forEach(el => el.classList.remove('selected'));
+  itemEl.classList.add('selected');
 
 const rect = itemEl.getBoundingClientRect();
 
@@ -524,18 +538,19 @@ floatingToolbar.style.top =
 
             document.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
-                
-                const canvasRect = flatLayCanvas.getBoundingClientRect();
+
                 const newX = startLeft + (e.clientX - startX);
                 const newY = startTop + (e.clientY - startY);
-                
-                // Constrain to canvas bounds
-                const maxX = flatLayCanvas.offsetWidth - itemEl.offsetWidth;
-                const maxY = flatLayCanvas.offsetHeight - itemEl.offsetHeight;
-                
-                const constrainedX = Math.max(0, Math.min(newX, maxX));
-                const constrainedY = Math.max(0, Math.min(newY, maxY));
-                
+
+                // Allow free movement - only soft-constrain to keep at least part visible
+                const minVisible = -itemEl.offsetWidth + 30;
+                const maxX = flatLayCanvas.offsetWidth - 30;
+                const minVisibleY = -itemEl.offsetHeight + 30;
+                const maxY = flatLayCanvas.offsetHeight - 30;
+
+                const constrainedX = Math.max(minVisible, Math.min(newX, maxX));
+                const constrainedY = Math.max(minVisibleY, Math.min(newY, maxY));
+
                 itemEl.style.left = constrainedX + 'px';
                 itemEl.style.top = constrainedY + 'px';
             });
@@ -544,14 +559,10 @@ floatingToolbar.style.top =
                 if (isDragging) {
                     isDragging = false;
                     itemEl.classList.remove('dragging');
-                    
-                    // Update position in outfit
-                    const rect = itemEl.getBoundingClientRect();
-                    const canvasRect = flatLayCanvas.getBoundingClientRect();
-                    const scale = canvasItem.scale || 1;
-canvasItem.x = (rect.left - canvasRect.left) / scale;
-canvasItem.y = (rect.top - canvasRect.top) / scale;
 
+                    // Update position directly from element style
+                    canvasItem.x = parseFloat(itemEl.style.left) || 0;
+                    canvasItem.y = parseFloat(itemEl.style.top) || 0;
                 }
             });
         }
@@ -573,8 +584,11 @@ canvasItem.y = (rect.top - canvasRect.top) / scale;
   document.addEventListener('mousemove', (e) => {
     if (!resizing) return;
     const delta = (e.clientX - startX) / 200;
-    canvasItem.scale = Math.max(0.3, Math.min(3, startScale + delta));
-    itemEl.style.transform = `scale(${canvasItem.scale})`;
+    canvasItem.scale = Math.max(0.2, Math.min(4, startScale + delta));
+    const rot = canvasItem.rotation || 0;
+    const sx = canvasItem.flipX ? -canvasItem.scale : canvasItem.scale;
+    const sy = canvasItem.flipY ? -canvasItem.scale : canvasItem.scale;
+    itemEl.style.transform = `scale(${sx}, ${sy}) rotate(${rot}deg)`;
   });
 
   document.addEventListener('mouseup', () => {
@@ -616,6 +630,9 @@ canvasItem.y = (rect.top - canvasRect.top) / scale;
       x: ci.x,
       y: ci.y,
       scale: ci.scale,
+      rotation: ci.rotation || 0,
+      flipX: ci.flipX || false,
+      flipY: ci.flipY || false,
       zIndex: ci.zIndex
     })),
     createdAt: new Date().toISOString()
@@ -711,6 +728,9 @@ canvasItem.y = (rect.top - canvasRect.top) / scale;
     x: ci.x || 50,
     y: ci.y || 50,
     scale: ci.scale || 1,
+    rotation: ci.rotation || 0,
+    flipX: ci.flipX || false,
+    flipY: ci.flipY || false,
     zIndex: ci.zIndex || 1
 }));
 
@@ -1386,29 +1406,129 @@ if (noteEl) noteEl.value = outfit.note || '';
         });
         grid.innerHTML = html;
 
-        // Click to load outfit onto canvas
+        // Click to load outfit onto canvas with proper outfit layout
         const cards = grid.querySelectorAll('.reco-mini-card');
         cards.forEach((card, idx) => {
             card.addEventListener('click', () => {
                 if (outfits[idx]) {
                     clearOutfit();
-                    const canvasRect = flatLayCanvas.getBoundingClientRect();
-                    const spacing = Math.min(canvasRect.width / (outfits[idx].items.length + 1), 180);
-                    outfits[idx].items.forEach((item, i) => {
-                        const x = spacing * (i + 0.5);
-                        const y = 40;
-                        currentOutfit.items.push({
-                            id: 'reco_' + Date.now() + '_' + i,
-                            item: item,
-                            x, y,
-                            scale: 1,
-                            zIndex: i + 1
-                        });
-                    });
+                    currentOutfit.items = layoutOutfitItems(outfits[idx].items);
                     renderCanvas();
                 }
             });
         });
+    }
+
+    // Categorize item for layout positioning
+    function getItemLayoutType(category) {
+        if (!category) return 'top';
+        const cat = category.toLowerCase();
+        if (cat.includes('trouser') || cat.includes('jeans') || cat.includes('pants') || cat.includes('skirt') || cat.includes('bottom')) return 'bottom';
+        if (cat.includes('jacket') || cat.includes('blazer') || cat.includes('coat')) return 'layer';
+        if (cat.includes('dress')) return 'fullbody';
+        return 'top';
+    }
+
+    // Layout outfit items like a real outfit - top on top, bottom below, etc.
+    function layoutOutfitItems(items) {
+        if (!flatLayCanvas || items.length === 0) return [];
+        const canvasRect = flatLayCanvas.getBoundingClientRect();
+        const cw = canvasRect.width;
+        const ch = canvasRect.height;
+        const centerX = cw / 2 - 100; // center horizontally (assuming ~200px item width)
+
+        const tops = [];
+        const bottoms = [];
+        const layers = [];
+        const fullbody = [];
+
+        items.forEach(item => {
+            const type = getItemLayoutType(item.category);
+            if (type === 'bottom') bottoms.push(item);
+            else if (type === 'layer') layers.push(item);
+            else if (type === 'fullbody') fullbody.push(item);
+            else tops.push(item);
+        });
+
+        const result = [];
+        let zIdx = 1;
+
+        if (fullbody.length > 0) {
+            // Dress: center vertically
+            fullbody.forEach((item, i) => {
+                const xOff = fullbody.length > 1 ? (i - (fullbody.length - 1) / 2) * 160 : 0;
+                result.push({
+                    id: 'reco_' + Date.now() + '_fb_' + i,
+                    item: item,
+                    x: centerX + xOff,
+                    y: ch * 0.08,
+                    scale: Math.min(1, ch / 500),
+                    zIndex: zIdx++
+                });
+            });
+            // Layer on top of dress
+            layers.forEach((item, i) => {
+                result.push({
+                    id: 'reco_' + Date.now() + '_l_' + i,
+                    item: item,
+                    x: centerX - 10,
+                    y: ch * 0.05,
+                    scale: Math.min(0.9, ch / 550),
+                    zIndex: zIdx++
+                });
+            });
+        } else {
+            // Top at upper portion
+            const topY = ch * 0.05;
+            tops.forEach((item, i) => {
+                const xOff = tops.length > 1 ? (i - (tops.length - 1) / 2) * 140 : 0;
+                result.push({
+                    id: 'reco_' + Date.now() + '_t_' + i,
+                    item: item,
+                    x: centerX + xOff,
+                    y: topY,
+                    scale: Math.min(0.85, ch / 600),
+                    zIndex: zIdx++
+                });
+            });
+
+            // Bottom below the top
+            const bottomY = ch * 0.45;
+            bottoms.forEach((item, i) => {
+                const xOff = bottoms.length > 1 ? (i - (bottoms.length - 1) / 2) * 140 : 0;
+                result.push({
+                    id: 'reco_' + Date.now() + '_b_' + i,
+                    item: item,
+                    x: centerX + xOff,
+                    y: bottomY,
+                    scale: Math.min(0.85, ch / 600),
+                    zIndex: zIdx++
+                });
+            });
+
+            // Layer overlaid slightly offset on top
+            layers.forEach((item, i) => {
+                result.push({
+                    id: 'reco_' + Date.now() + '_l_' + i,
+                    item: item,
+                    x: centerX + 20,
+                    y: ch * 0.02,
+                    scale: Math.min(0.9, ch / 550),
+                    zIndex: zIdx++
+                });
+            });
+        }
+
+        return result;
+    }
+
+    // Auto-arrange current canvas items into outfit layout
+    function autoArrangeOutfit() {
+        if (currentOutfit.items.length === 0) return;
+        const items = currentOutfit.items.map(ci => ci.item);
+        const arranged = layoutOutfitItems(items);
+        currentOutfit.items = arranged;
+        renderCanvas();
     }
 
     // Load recommended outfit passed from dashboard
@@ -1420,18 +1540,7 @@ if (noteEl) noteEl.value = outfit.note || '';
             const outfit = JSON.parse(raw);
             if (outfit && outfit.items && outfit.items.length > 0) {
                 clearOutfit();
-                const canvasRect = flatLayCanvas.getBoundingClientRect();
-                const spacing = Math.min(canvasRect.width / (outfit.items.length + 1), 180);
-                outfit.items.forEach((item, i) => {
-                    currentOutfit.items.push({
-                        id: 'reco_' + Date.now() + '_' + i,
-                        item: item,
-                        x: spacing * (i + 0.5),
-                        y: 40,
-                        scale: 1,
-                        zIndex: i + 1
-                    });
-                });
+                currentOutfit.items = layoutOutfitItems(outfit.items);
                 renderCanvas();
             }
         } catch (e) { console.error('Failed to load reco outfit:', e); }
@@ -1458,7 +1567,6 @@ floatingToolbar.addEventListener('click', (e) => {
     const above = items
       .filter(i => i.zIndex > selectedCanvasItem.zIndex)
       .sort((a, b) => a.zIndex - b.zIndex)[0];
-
     if (above) {
       const temp = selectedCanvasItem.zIndex;
       selectedCanvasItem.zIndex = above.zIndex;
@@ -1470,12 +1578,44 @@ floatingToolbar.addEventListener('click', (e) => {
     const below = items
       .filter(i => i.zIndex < selectedCanvasItem.zIndex)
       .sort((a, b) => b.zIndex - a.zIndex)[0];
-
     if (below) {
       const temp = selectedCanvasItem.zIndex;
       selectedCanvasItem.zIndex = below.zIndex;
       below.zIndex = temp;
     }
+  }
+
+  if (action === 'rotateLeft') {
+    selectedCanvasItem.rotation = ((selectedCanvasItem.rotation || 0) - 15) % 360;
+  }
+
+  if (action === 'rotateRight') {
+    selectedCanvasItem.rotation = ((selectedCanvasItem.rotation || 0) + 15) % 360;
+  }
+
+  if (action === 'flipH') {
+    selectedCanvasItem.flipX = !selectedCanvasItem.flipX;
+  }
+
+  if (action === 'flipV') {
+    selectedCanvasItem.flipY = !selectedCanvasItem.flipY;
+  }
+
+  if (action === 'duplicate') {
+    const maxZ = Math.max(0, ...items.map(i => i.zIndex || 0));
+    const dup = {
+      id: Date.now().toString() + '_dup_' + selectedCanvasItem.item.id,
+      item: selectedCanvasItem.item,
+      x: (selectedCanvasItem.x || 0) + 30,
+      y: (selectedCanvasItem.y || 0) + 30,
+      scale: selectedCanvasItem.scale || 1,
+      rotation: selectedCanvasItem.rotation || 0,
+      flipX: selectedCanvasItem.flipX || false,
+      flipY: selectedCanvasItem.flipY || false,
+      zIndex: maxZ + 1
+    };
+    items.push(dup);
+    hideFloatingToolbar();
   }
 
   if (action === 'remove') {
@@ -1493,6 +1633,235 @@ function hideFloatingToolbar() {
   floatingToolbar.classList.add('hidden');
 }
 
+// ---- ZOOM CONTROLS ----
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomResetBtn = document.getElementById('zoomResetBtn');
+const zoomLevelEl = document.getElementById('zoomLevel');
 
+function updateCanvasZoom() {
+    if (!flatLayCanvas) return;
+    flatLayCanvas.style.transform = `scale(${canvasZoom})`;
+    flatLayCanvas.style.transformOrigin = 'center center';
+    if (zoomLevelEl) zoomLevelEl.textContent = Math.round(canvasZoom * 100) + '%';
+}
+
+if (zoomInBtn) zoomInBtn.addEventListener('click', () => {
+    canvasZoom = Math.min(3, canvasZoom + 0.1);
+    updateCanvasZoom();
+});
+if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => {
+    canvasZoom = Math.max(0.3, canvasZoom - 0.1);
+    updateCanvasZoom();
+});
+if (zoomResetBtn) zoomResetBtn.addEventListener('click', () => {
+    canvasZoom = 1;
+    updateCanvasZoom();
+});
+
+// Mouse wheel zoom on canvas
+if (flatLayCanvas) {
+    flatLayCanvas.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            canvasZoom = Math.max(0.3, Math.min(3, canvasZoom + delta));
+            updateCanvasZoom();
+        }
+    }, { passive: false });
+}
+
+// ---- AUTO-ARRANGE ----
+const autoArrangeBtn = document.getElementById('autoArrangeBtn');
+if (autoArrangeBtn) {
+    autoArrangeBtn.addEventListener('click', () => {
+        autoArrangeOutfit();
+    });
+}
+
+// ---- CANVAS BACKGROUND ----
+const canvasBgSelect = document.getElementById('canvasBgSelect');
+if (canvasBgSelect) {
+    canvasBgSelect.addEventListener('change', () => {
+        if (!flatLayCanvas) return;
+        flatLayCanvas.classList.remove('canvas-bg-light', 'canvas-bg-white', 'canvas-bg-grid');
+        const val = canvasBgSelect.value;
+        if (val === 'light') flatLayCanvas.classList.add('canvas-bg-light');
+        else if (val === 'white') flatLayCanvas.classList.add('canvas-bg-white');
+        else if (val === 'grid') flatLayCanvas.classList.add('canvas-bg-grid');
+    });
+}
+
+// ---- EXPORT OUTFIT AS IMAGE ----
+const exportOutfitBtn = document.getElementById('exportOutfitBtn');
+if (exportOutfitBtn) {
+    exportOutfitBtn.addEventListener('click', () => {
+        if (currentOutfit.items.length === 0) {
+            alert('Add items to the canvas before exporting.');
+            return;
+        }
+        exportOutfitAsImage();
+    });
+}
+
+function exportOutfitAsImage() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const canvasRect = flatLayCanvas.getBoundingClientRect();
+    const exportW = 800;
+    const exportH = Math.round(exportW * (canvasRect.height / canvasRect.width));
+    canvas.width = exportW;
+    canvas.height = exportH;
+
+    // Background
+    ctx.fillStyle = '#FAF5F2';
+    ctx.fillRect(0, 0, exportW, exportH);
+
+    const scaleFactorX = exportW / canvasRect.width;
+    const scaleFactorY = exportH / canvasRect.height;
+
+    // Sort items by z-index
+    const sorted = currentOutfit.items.slice().sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+
+    let loadedCount = 0;
+    const total = sorted.length;
+
+    sorted.forEach((ci) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const s = ci.scale || 1;
+            const r = (ci.rotation || 0) * Math.PI / 180;
+            const sx = ci.flipX ? -1 : 1;
+            const sy = ci.flipY ? -1 : 1;
+            const drawW = img.width * s;
+            const drawH = img.height * s;
+            const cx = (ci.x + drawW / 2) * scaleFactorX;
+            const cy = (ci.y + drawH / 2) * scaleFactorY;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(r);
+            ctx.scale(sx, sy);
+            ctx.drawImage(img, -drawW * scaleFactorX / 2, -drawH * scaleFactorY / 2, drawW * scaleFactorX, drawH * scaleFactorY);
+            ctx.restore();
+
+            loadedCount++;
+            if (loadedCount === total) {
+                // All images drawn, trigger download
+                const link = document.createElement('a');
+                link.download = 'outfit_' + new Date().toISOString().slice(0, 10) + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        };
+        img.onerror = () => {
+            loadedCount++;
+            if (loadedCount === total) {
+                const link = document.createElement('a');
+                link.download = 'outfit_' + new Date().toISOString().slice(0, 10) + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        };
+        img.src = ci.item.dataURL;
+    });
+}
+
+// ---- TOUCH SUPPORT FOR CANVAS ITEMS ----
+if (flatLayCanvas) {
+    flatLayCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    flatLayCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    flatLayCanvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+let touchDragItem = null;
+let touchStartPos = { x: 0, y: 0 };
+let touchItemStartPos = { x: 0, y: 0 };
+
+function handleTouchStart(e) {
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const canvasItemEl = target?.closest('.canvas-item');
+    if (!canvasItemEl) return;
+
+    e.preventDefault();
+    const itemId = canvasItemEl.getAttribute('data-item-id');
+    touchDragItem = currentOutfit.items.find(ci => ci.id === itemId);
+    if (!touchDragItem) return;
+
+    touchStartPos = { x: touch.clientX, y: touch.clientY };
+    touchItemStartPos = { x: touchDragItem.x, y: touchDragItem.y };
+    canvasItemEl.classList.add('dragging');
+}
+
+function handleTouchMove(e) {
+    if (!touchDragItem) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartPos.x;
+    const dy = touch.clientY - touchStartPos.y;
+    touchDragItem.x = touchItemStartPos.x + dx;
+    touchDragItem.y = touchItemStartPos.y + dy;
+
+    const el = flatLayCanvas.querySelector(`[data-item-id="${touchDragItem.id}"]`);
+    if (el) {
+        el.style.left = touchDragItem.x + 'px';
+        el.style.top = touchDragItem.y + 'px';
+    }
+}
+
+function handleTouchEnd(e) {
+    if (touchDragItem) {
+        const el = flatLayCanvas.querySelector(`[data-item-id="${touchDragItem.id}"]`);
+        if (el) el.classList.remove('dragging');
+        touchDragItem = null;
+    }
+}
+
+// ---- KEYBOARD SHORTCUTS FOR CANVAS ----
+document.addEventListener('keydown', (e) => {
+    if (!selectedCanvasItem) return;
+    // Don't interfere with text inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+    const step = e.shiftKey ? 10 : 1;
+    let handled = false;
+
+    switch (e.key) {
+        case 'ArrowLeft':
+            selectedCanvasItem.x -= step;
+            handled = true;
+            break;
+        case 'ArrowRight':
+            selectedCanvasItem.x += step;
+            handled = true;
+            break;
+        case 'ArrowUp':
+            selectedCanvasItem.y -= step;
+            handled = true;
+            break;
+        case 'ArrowDown':
+            selectedCanvasItem.y += step;
+            handled = true;
+            break;
+        case 'Delete':
+        case 'Backspace':
+            removeItemFromCanvas(selectedCanvasItem.id);
+            hideFloatingToolbar();
+            handled = true;
+            break;
+        case 'r':
+        case 'R':
+            selectedCanvasItem.rotation = ((selectedCanvasItem.rotation || 0) + (e.shiftKey ? -15 : 15)) % 360;
+            handled = true;
+            break;
+    }
+
+    if (handled) {
+        e.preventDefault();
+        renderCanvas();
+    }
+});
 
 })();

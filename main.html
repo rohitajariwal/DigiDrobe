@@ -72,17 +72,26 @@
                 <div class="canvas-header">
                     <h3>Style Your Outfit</h3>
                     <div class="canvas-actions">
+                        <button id="autoArrangeBtn" class="btn-ghost tiny" type="button" title="Auto-arrange items into outfit layout">Auto Arrange</button>
                         <button id="clearOutfitBtn" class="btn-ghost tiny" type="button">Clear All</button>
                         <button id="saveOutfitBtn" class="btn-main tiny" type="button">Save Outfit</button>
+                        <button id="exportOutfitBtn" class="btn-ghost tiny" type="button" title="Download outfit as image">Export</button>
                     </div>
                     <div class="outfit-note-wrapper">
-    <textarea
-        id="outfitNote"
-        placeholder="Add outfit details (occasion, styling notes...)"
-        rows="3">
-    </textarea>
-</div>
-
+                        <textarea id="outfitNote" placeholder="Add outfit details (occasion, styling notes...)" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="canvas-zoom-controls">
+                    <button id="zoomOutBtn" class="btn-ghost tiny" type="button" title="Zoom out">−</button>
+                    <span id="zoomLevel" class="tiny muted">100%</span>
+                    <button id="zoomInBtn" class="btn-ghost tiny" type="button" title="Zoom in">+</button>
+                    <button id="zoomResetBtn" class="btn-ghost tiny" type="button" title="Reset zoom">Reset</button>
+                    <select id="canvasBgSelect" class="canvas-bg-select" title="Canvas background">
+                        <option value="default">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="white">White</option>
+                        <option value="grid">Grid</option>
+                    </select>
                 </div>
                 
                 <!-- Free-form 2D Canvas -->
@@ -161,6 +170,11 @@
 <div id="floatingToolbar" class="floating-toolbar hidden">
   <button data-action="front" title="Bring forward">⬆</button>
   <button data-action="back" title="Send backward">⬇</button>
+  <button data-action="rotateLeft" title="Rotate left">↶</button>
+  <button data-action="rotateRight" title="Rotate right">↷</button>
+  <button data-action="flipH" title="Flip horizontal">⇔</button>
+  <button data-action="flipV" title="Flip vertical">⇕</button>
+  <button data-action="duplicate" title="Duplicate">⧉</button>
   <button data-action="remove" title="Remove">🗑</button>
 </div>
 

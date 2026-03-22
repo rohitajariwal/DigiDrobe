@@ -174,8 +174,8 @@ body {
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    gap: 16px;
+    padding: 16px;
+    gap: 8px;
     overflow: hidden;
 }
 
@@ -183,8 +183,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .canvas-header h3 {
@@ -212,13 +214,56 @@ body {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 16px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     cursor: default;
+    transition: transform 0.15s ease, background 0.3s ease;
 }
 
 .flat-lay-canvas.drag-over {
     background: rgba(168, 124, 124, 0.08);
     border: 2px dashed var(--accent);
+}
+
+/* Canvas background variants */
+.flat-lay-canvas.canvas-bg-light {
+    background: rgba(255, 255, 255, 0.12);
+}
+.flat-lay-canvas.canvas-bg-white {
+    background: #FAF5F2;
+}
+.flat-lay-canvas.canvas-bg-grid {
+    background-color: rgba(255, 255, 255, 0.05);
+    background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+}
+
+/* Canvas zoom controls row */
+.canvas-zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.canvas-zoom-controls .btn-ghost.tiny {
+    width: 32px;
+    padding: 4px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.canvas-bg-select {
+    width: auto;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text-main);
+    cursor: pointer;
 }
 
 .canvas-empty-state {
@@ -254,13 +299,19 @@ body {
 }
 
 .canvas-item img {
-    max-width: 300px;
-    max-height: 400px;
+    max-width: 220px;
+    max-height: 280px;
     width: auto;
     height: auto;
     object-fit: contain;
     pointer-events: none;
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+
+.canvas-item.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
 }
 
 .canvas-item .item-remove-btn {
@@ -815,21 +866,26 @@ body.auth-page {
 .floating-toolbar {
   position: absolute;
   display: flex;
-  gap: 6px;
-  padding: 6px;
-  background: rgba(0, 0, 0, 0.85);
-  border-radius: 8px;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 10px;
   z-index: 10000;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
 }
 
 .floating-toolbar button {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   border: none;
   color: white;
-  font-size: 14px;
-  padding: 6px 8px;
+  font-size: 13px;
+  padding: 5px 7px;
   border-radius: 6px;
   cursor: pointer;
+  width: auto;
+  min-width: 28px;
+  transition: background 0.15s ease;
 }
 
 .floating-toolbar button:hover {
