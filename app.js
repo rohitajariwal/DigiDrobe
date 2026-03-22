@@ -1343,6 +1343,103 @@ if (noteEl) noteEl.value = outfit.note || '';
     // Re-setup drag and drop after wardrobe is rendered to ensure everything is connected
     setupDragAndDrop();
 
+    // --------------------------
+    //  MINI RECOMMENDATIONS (Right Sidebar)
+    // --------------------------
+    function renderMiniRecommendations() {
+        const grid = document.getElementById('recoMiniGrid');
+        if (!grid) return;
+        const RE = window.RecommendationEngine;
+        if (!RE) { grid.innerHTML = '<p class="tiny muted">Recommendation engine not loaded.</p>'; return; }
+
+        const items = wardrobeCache;
+        if (items.length < 2) {
+            grid.innerHTML = '<p class="tiny muted">Upload a top and a bottom to get recommendations.</p>';
+            return;
+        }
+
+        const outfits = RE.getDailyRecommendations(items, { count: 3 });
+        if (outfits.length === 0) {
+            grid.innerHTML = '<p class="tiny muted">Add more variety to unlock recommendations.</p>';
+            return;
+        }
+
+        const COLOR_MAP = {
+            Red: "#E74C3C", Orange: "#E67E22", Yellow: "#F1C40F", Green: "#27AE60",
+            Cyan: "#1ABC9C", Blue: "#3498DB", Purple: "#9B59B6", Pink: "#E91E90",
+            Gray: "#95A5A6", Black: "#2C3E50", White: "#ECF0F1", Unknown: "#7F8C8D"
+        };
+
+        let html = '';
+        outfits.forEach(outfit => {
+            const scoreClass = outfit.score >= 80 ? 'score-high' : outfit.score >= 60 ? 'score-mid' : 'score-low';
+            html += '<div class="reco-mini-card" title="Click to load this outfit on canvas">';
+            html += '<div class="reco-mini-items">';
+            outfit.items.forEach(item => {
+                html += `<img src="${item.dataURL}" alt="${item.name}" />`;
+            });
+            html += '</div>';
+            html += '<div class="reco-mini-footer">';
+            html += `<span class="reco-label">${outfit.occasion}</span>`;
+            html += `<span class="reco-score ${scoreClass}">${outfit.score}%</span>`;
+            html += '</div></div>';
+        });
+        grid.innerHTML = html;
+
+        // Click to load outfit onto canvas
+        const cards = grid.querySelectorAll('.reco-mini-card');
+        cards.forEach((card, idx) => {
+            card.addEventListener('click', () => {
+                if (outfits[idx]) {
+                    clearOutfit();
+                    const canvasRect = flatLayCanvas.getBoundingClientRect();
+                    const spacing = Math.min(canvasRect.width / (outfits[idx].items.length + 1), 180);
+                    outfits[idx].items.forEach((item, i) => {
+                        const x = spacing * (i + 0.5);
+                        const y = 40;
+                        currentOutfit.items.push({
+                            id: 'reco_' + Date.now() + '_' + i,
+                            item: item,
+                            x, y,
+                            scale: 1,
+                            zIndex: i + 1
+                        });
+                    });
+                    renderCanvas();
+                }
+            });
+        });
+    }
+
+    // Load recommended outfit passed from dashboard
+    function loadRecoOutfitFromDashboard() {
+        const raw = localStorage.getItem('tempRecoOutfit');
+        if (!raw) return;
+        localStorage.removeItem('tempRecoOutfit');
+        try {
+            const outfit = JSON.parse(raw);
+            if (outfit && outfit.items && outfit.items.length > 0) {
+                clearOutfit();
+                const canvasRect = flatLayCanvas.getBoundingClientRect();
+                const spacing = Math.min(canvasRect.width / (outfit.items.length + 1), 180);
+                outfit.items.forEach((item, i) => {
+                    currentOutfit.items.push({
+                        id: 'reco_' + Date.now() + '_' + i,
+                        item: item,
+                        x: spacing * (i + 0.5),
+                        y: 40,
+                        scale: 1,
+                        zIndex: i + 1
+                    });
+                });
+                renderCanvas();
+            }
+        } catch (e) { console.error('Failed to load reco outfit:', e); }
+    }
+
+    renderMiniRecommendations();
+    loadRecoOutfitFromDashboard();
+
 
 
 document.addEventListener('click', () => {

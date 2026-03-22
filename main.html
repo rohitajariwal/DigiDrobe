@@ -11,15 +11,21 @@
 <body>
 
     <!-- ================= TOP BAR ================= -->
-    <div id="topbar">
-        <a id="userEmail" class="topbar-mail muted" href="profile.html">
-            Not logged in
-        </a>
-        <div class="topbar-right">
-            <span id="modelStatus" class="muted">Model: checking…</span>
+    <nav class="dash-nav">
+        <div class="dash-nav-left">
+            <h1 class="brand-sm">DigiDrobe</h1>
+        </div>
+        <div class="dash-nav-links">
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="main.html" class="nav-link active">Studio</a>
+            <a href="profile.html" class="nav-link">Profile</a>
+        </div>
+        <div class="dash-nav-right">
+            <span id="modelStatus" class="nav-user muted">Model: checking…</span>
+            <a id="userEmail" class="nav-user" href="profile.html">Not logged in</a>
             <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
         </div>
-    </div>
+    </nav>
 
     <!-- ================= MAIN CONTAINER ================= -->
     <div class="container">
@@ -115,6 +121,14 @@
                 </div>
             </section>
 
+            <!-- Outfit Recommendations -->
+            <section class="card reco-panel">
+                <h4>Quick Recommendations</h4>
+                <p class="tiny muted">AI-generated outfit suggestions from your wardrobe</p>
+                <div id="recoMiniGrid" class="reco-mini-grid"></div>
+                <a href="dashboard.html" class="btn-ghost tiny" style="margin-top:10px;display:block;text-align:center;text-decoration:none;">View All on Dashboard</a>
+            </section>
+
         </aside>
     </div>
 
@@ -155,6 +169,7 @@
 <script src="color-classifier.js"></script>
 <script src="cloth-extractor.js"></script>
 <script src="product-importer.js"></script>
+<script src="recommendation-engine.js"></script>
 <script src="app.js"></script>
 
 

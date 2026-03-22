@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DigiDrobe — Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="dashboard-body">
+
+    <!-- ================= TOP NAV ================= -->
+    <nav class="dash-nav">
+        <div class="dash-nav-left">
+            <h1 class="brand-sm">DigiDrobe</h1>
+        </div>
+        <div class="dash-nav-links">
+            <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            <a href="main.html" class="nav-link">Studio</a>
+            <a href="profile.html" class="nav-link">Profile</a>
+        </div>
+        <div class="dash-nav-right">
+            <span id="dashUserEmail" class="nav-user">user</span>
+            <button id="dashLogout" class="btn-ghost" type="button">Logout</button>
+        </div>
+    </nav>
+
+    <!-- ================= DASHBOARD CONTENT ================= -->
+    <div class="dash-container">
+
+        <!-- ROW 1: Welcome + Quick Stats -->
+        <section class="dash-welcome">
+            <div class="dash-welcome-text">
+                <p class="tiny muted">Dashboard</p>
+                <h2 id="dashGreeting">Welcome back!</h2>
+                <p class="muted" id="dashSubtext">Here's your wardrobe overview and today's outfit suggestions.</p>
+            </div>
+            <div class="dash-welcome-avatar">
+                <div id="dashAvatar" class="dash-avatar">DD</div>
+            </div>
+        </section>
+
+        <!-- ROW 2: Stat Cards -->
+        <section class="dash-stats-row">
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon">&#128085;</div>
+                <div class="dash-stat-info">
+                    <span class="dash-stat-value" id="statTotalItems">0</span>
+                    <span class="dash-stat-label">Total Items</span>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon">&#127912;</div>
+                <div class="dash-stat-info">
+                    <span class="dash-stat-value" id="statCategories">0</span>
+                    <span class="dash-stat-label">Categories</span>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon">&#9889;</div>
+                <div class="dash-stat-info">
+                    <span class="dash-stat-value" id="statPossibleOutfits">0</span>
+                    <span class="dash-stat-label">Possible Outfits</span>
+                </div>
+            </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon">&#11088;</div>
+                <div class="dash-stat-info">
+                    <span class="dash-stat-value" id="statVersatility">0%</span>
+                    <span class="dash-stat-label">Versatility</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROW 3: Charts + Tips -->
+        <section class="dash-charts-row">
+            <!-- Category Chart -->
+            <div class="dash-chart-card">
+                <h3>Category Distribution</h3>
+                <div id="categoryChart" class="dash-chart-area"></div>
+            </div>
+            <!-- Color Chart -->
+            <div class="dash-chart-card">
+                <h3>Color Palette</h3>
+                <div id="colorChart" class="dash-chart-area"></div>
+            </div>
+            <!-- Style Tips -->
+            <div class="dash-chart-card dash-tips-card">
+                <h3>Style Insights</h3>
+                <div id="styleTips" class="dash-tips-list"></div>
+                <div class="dash-gaps" id="wardrobeGaps"></div>
+            </div>
+        </section>
+
+        <!-- ROW 4: Outfit Recommendations -->
+        <section class="dash-reco-section">
+            <div class="dash-reco-header">
+                <div>
+                    <h3>Outfit Recommendations</h3>
+                    <p class="muted small">Curated outfits from your wardrobe based on color harmony and occasion.</p>
+                </div>
+                <div class="dash-reco-controls">
+                    <select id="occasionFilter">
+                        <option value="casual">Casual</option>
+                        <option value="formal">Formal</option>
+                        <option value="work">Work</option>
+                        <option value="party">Party</option>
+                        <option value="date">Date Night</option>
+                        <option value="sporty">Sporty</option>
+                    </select>
+                    <button id="refreshRecoBtn" class="btn-main" type="button">Refresh</button>
+                </div>
+            </div>
+            <div id="recoGrid" class="dash-reco-grid">
+                <div class="dash-reco-empty">
+                    <p>Upload clothes to your wardrobe to get personalized outfit recommendations.</p>
+                    <a href="main.html" class="btn-main" style="display:inline-block;width:auto;padding:10px 24px;margin-top:12px;">Go to Studio</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROW 5: Favorite Outfits -->
+        <section class="dash-fav-section">
+            <h3>Saved Favorites</h3>
+            <div id="favGrid" class="dash-reco-grid">
+                <p class="muted small">No favorite outfits yet. Save outfits you like from the recommendations above.</p>
+            </div>
+        </section>
+
+        <!-- ROW 6: Wardrobe Highlights -->
+        <section class="dash-wardrobe-preview">
+            <div class="dash-reco-header">
+                <h3>Wardrobe Overview</h3>
+                <a href="main.html" class="btn-ghost" style="width:auto;padding:8px 16px;">Open Studio</a>
+            </div>
+            <div id="wardrobePreviewGrid" class="dash-wardrobe-grid"></div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="local-db-plain.js"></script>
+    <script src="recommendation-engine.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
