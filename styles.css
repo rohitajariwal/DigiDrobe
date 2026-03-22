@@ -1765,16 +1765,16 @@ body.auth-page {
 
 .wardrobe-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
     margin-top: 12px;
 }
 
 .wardrobe-item {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 10px;
+    padding: 12px;
     position: relative;
     text-align: center;
     transition: var(--transition);
@@ -1784,9 +1784,9 @@ body.auth-page {
     border-color: var(--accent);
 }
 
-.wardrobe-item img {
+.wardrobe-item > img {
     width: 100%;
-    height: 100px;
+    height: 120px;
     object-fit: contain;
     border-radius: 8px;
     margin-bottom: 8px;
@@ -1794,8 +1794,8 @@ body.auth-page {
 
 .wardrobe-meta strong {
     display: block;
-    font-size: 12px;
-    margin-bottom: 2px;
+    font-size: 13px;
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1884,54 +1884,79 @@ body.auth-page {
 }
 
 /* Profile wardrobe item inline editing */
-.wardrobe-item .wardrobe-edit-row {
+.wardrobe-edit-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 5px;
+    margin-top: 6px;
+    flex-wrap: wrap;
 }
 
-.wardrobe-item .edit-icon-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
+.wardrobe-edit-row .field-label {
     font-size: 10px;
-    padding: 2px 4px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 2px;
 }
 
-.wardrobe-item .edit-icon-btn:hover {
-    opacity: 1;
+.wardrobe-edit-row .field-value {
+    font-size: 12px;
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.wardrobe-edit-row .field-value:hover {
     color: var(--accent);
 }
 
-.wardrobe-item .inline-edit-select {
+.edit-icon-btn {
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
-    color: var(--text-main);
-    font-size: 11px;
-    padding: 3px 6px;
-    max-width: 110px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    color: var(--muted);
     cursor: pointer;
+    font-size: 11px;
+    padding: 2px 6px;
+    transition: all 0.2s;
+    line-height: 1;
 }
 
-.wardrobe-item .inline-edit-select:focus {
-    outline: none;
+.edit-icon-btn:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
     border-color: var(--accent);
 }
 
-.wardrobe-item .color-dot-sm {
+.inline-edit-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 12px;
+    padding: 4px 8px;
+    width: 100%;
+    max-width: 160px;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.inline-edit-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(168, 124, 124, 0.3);
+}
+
+.color-dot-sm {
     display: inline-block;
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     margin-right: 3px;
     vertical-align: middle;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
 }
 
 @media (max-width: 900px) {

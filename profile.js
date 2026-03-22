@@ -267,17 +267,19 @@
                 <img src="${item.dataURL}" alt="${item.name}">
                 <div class="wardrobe-meta">
                     <strong>${item.name || 'Unnamed'}</strong>
-                    <div class="wardrobe-edit-row">
-                        <span class="category-label" title="Click to change type">${displayCategory}</span>
-                        <button class="edit-icon-btn edit-category-btn" type="button" title="Edit type">&#9998;</button>
+                    <div class="wardrobe-edit-row" data-field="category">
+                        <span class="field-label">Type:</span>
+                        <span class="field-value category-label">${displayCategory}</span>
+                        <button class="edit-icon-btn edit-category-btn" type="button" title="Change clothing type">&#9998;</button>
                         <select class="inline-edit-select category-select" style="display:none;" data-id="${item.id}">
                             ${categoryOptions}
                         </select>
                     </div>
-                    <div class="wardrobe-edit-row">
+                    <div class="wardrobe-edit-row" data-field="color">
+                        <span class="field-label">Color:</span>
                         <span class="color-dot-sm" style="background:${colorHex}"></span>
-                        <span class="color-label" title="Click to change color">${displayColor}</span>
-                        <button class="edit-icon-btn edit-color-btn" type="button" title="Edit color">&#9998;</button>
+                        <span class="field-value color-label">${displayColor}</span>
+                        <button class="edit-icon-btn edit-color-btn" type="button" title="Change color">&#9998;</button>
                         <select class="inline-edit-select color-select" style="display:none;" data-id="${item.id}">
                             ${colorOptions}
                         </select>
@@ -334,58 +336,78 @@
             });
         });
 
-        // Bind category edit buttons and selects
-        wardrobeGrid.querySelectorAll(".edit-category-btn").forEach((btn) => {
-            const item = btn.closest(".wardrobe-item");
-            const label = item.querySelector(".category-label");
-            const select = item.querySelector(".category-select");
+        // Bind category editing — clicking pencil OR the label/value opens the dropdown
+        wardrobeGrid.querySelectorAll("[data-field='category']").forEach((row) => {
+            const card = row.closest(".wardrobe-item");
+            const label = row.querySelector(".category-label");
+            const fieldLabel = row.querySelector(".field-label");
+            const btn = row.querySelector(".edit-category-btn");
+            const select = row.querySelector(".category-select");
 
-            btn.addEventListener("click", (e) => {
+            function openCategoryEdit(e) {
                 e.stopPropagation();
                 label.style.display = "none";
+                fieldLabel.style.display = "none";
                 btn.style.display = "none";
                 select.style.display = "inline-block";
                 setTimeout(() => select.focus(), 10);
-            });
+            }
+
+            function closeCategoryEdit() {
+                select.style.display = "none";
+                label.style.display = "";
+                fieldLabel.style.display = "";
+                btn.style.display = "";
+            }
+
+            btn.addEventListener("click", openCategoryEdit);
+            label.addEventListener("click", openCategoryEdit);
 
             select.addEventListener("change", (e) => {
                 e.stopPropagation();
                 handleCategoryChange(select.dataset.id, select.value);
             });
 
-            select.addEventListener("blur", () => {
-                select.style.display = "none";
-                label.style.display = "inline";
-                btn.style.display = "";
-            });
+            select.addEventListener("blur", closeCategoryEdit);
         });
 
-        // Bind color edit buttons and selects
-        wardrobeGrid.querySelectorAll(".edit-color-btn").forEach((btn) => {
-            const item = btn.closest(".wardrobe-item");
-            const label = item.querySelector(".color-label");
-            const select = item.querySelector(".color-select");
+        // Bind color editing — clicking pencil OR the label/dot opens the dropdown
+        wardrobeGrid.querySelectorAll("[data-field='color']").forEach((row) => {
+            const card = row.closest(".wardrobe-item");
+            const label = row.querySelector(".color-label");
+            const fieldLabel = row.querySelector(".field-label");
+            const dot = row.querySelector(".color-dot-sm");
+            const btn = row.querySelector(".edit-color-btn");
+            const select = row.querySelector(".color-select");
 
-            btn.addEventListener("click", (e) => {
+            function openColorEdit(e) {
                 e.stopPropagation();
                 label.style.display = "none";
+                fieldLabel.style.display = "none";
+                dot.style.display = "none";
                 btn.style.display = "none";
-                item.querySelector(".color-dot-sm").style.display = "none";
                 select.style.display = "inline-block";
                 setTimeout(() => select.focus(), 10);
-            });
+            }
+
+            function closeColorEdit() {
+                select.style.display = "none";
+                label.style.display = "";
+                fieldLabel.style.display = "";
+                dot.style.display = "";
+                btn.style.display = "";
+            }
+
+            btn.addEventListener("click", openColorEdit);
+            label.addEventListener("click", openColorEdit);
+            dot.addEventListener("click", openColorEdit);
 
             select.addEventListener("change", (e) => {
                 e.stopPropagation();
                 handleColorChange(select.dataset.id, select.value);
             });
 
-            select.addEventListener("blur", () => {
-                select.style.display = "none";
-                label.style.display = "inline";
-                btn.style.display = "";
-                item.querySelector(".color-dot-sm").style.display = "";
-            });
+            select.addEventListener("blur", closeColorEdit);
         });
     }
 
