@@ -851,6 +851,27 @@ if (noteEl) noteEl.value = outfit.note || '';
             setupDragAndDrop();
         }
 
+        async function updateItemCategory(itemId, newCategory) {
+            if (!itemId || !newCategory) return;
+            try {
+                const key = 'wardrobe_' + currentUser;
+                const items = JSON.parse(localStorage.getItem(key) || '[]');
+                const item = items.find(it => it.id === itemId);
+                if (item) {
+                    item.category = newCategory;
+                    localStorage.setItem(key, JSON.stringify(items));
+                }
+
+                if (window.DB && typeof DB.updateClothingCategory === 'function') {
+                    await DB.updateClothingCategory(currentUser, itemId, newCategory);
+                }
+            } catch (err) {
+                console.error('Update item category failed', err);
+            }
+            renderWardrobe();
+            setupDragAndDrop();
+        }
+
         async function redetectItemColor(itemId) {
             if (!itemId) return;
             const items = getWardrobeItems();
@@ -939,7 +960,7 @@ if (noteEl) noteEl.value = outfit.note || '';
 
                 // Get all available colors for the color picker
                 const availableColors = Array.from(new Set(items.map(item => item.color || 'Unknown'))).sort();
-                const standardColors = ['Red', 'Orange', 'Yellow', 'Green', 'Cyan', 'Blue', 'Purple', 'Pink', 'Gray', 'Black', 'White', 'Unknown'];
+                const standardColors = ['Red', 'Orange', 'Yellow', 'Green', 'Cyan', 'Blue', 'Purple', 'Pink', 'Brown', 'Navy', 'Maroon', 'Beige', 'Cream', 'Gray', 'Black', 'White', 'Unknown'];
                 const allColors = Array.from(new Set([...standardColors, ...availableColors])).sort();
 
                 // Render each filtered item
@@ -961,17 +982,27 @@ if (noteEl) noteEl.value = outfit.note || '';
                         const colorDot = `<span class="color-dot" style="background:${colorHex || '#808080'}"></span>`;
                         const sourceLink = item.sourceUrl ? `<a class="source-link" href="${item.sourceUrl}" target="_blank" rel="noopener noreferrer">View ↗</a>` : '';
                         
+                        // Available clothing categories for the type editor
+                        const clothingCategories = ['Shirt', 'Top/T-Shirt', 'Trouser/Jeans', 'Skirt', 'Jacket', 'Dress'];
+
                         // Build tile HTML with thumbnail, category, and color
                         tile.innerHTML = `
                             <img src="${item.dataURL}" class="thumb" alt="${item.name || 'Clothing item'}" onerror="this.style.display='none'; console.error('Image failed to load for item:', '${item.id}');">
                             <div class="meta">
                                 <strong>${item.name || 'Unnamed item'}</strong>
                                 <div class="small muted meta-line">
-                                    <span>${displayCategory}</span>
+                                    <span class="category-editable" data-item-id="${item.id}" title="Click to change type">
+                                        <span class="category-text">${displayCategory}</span>
+                                        <span class="edit-icon" style="margin-left:3px;font-size:10px;opacity:0.5;cursor:pointer;">&#9998;</span>
+                                        <select class="category-edit-select" style="display:none;">
+                                            ${clothingCategories.map(cat => `<option value="${cat}" ${cat === displayCategory ? 'selected' : ''}>${cat}</option>`).join('')}
+                                        </select>
+                                    </span>
                                     <span class="sep">•</span>
                                     <span class="color-editable" data-item-id="${item.id}" title="Click to edit color">
                                         ${colorDot}
                                         <span class="color-text">${displayColor}</span>
+                                        <span class="edit-icon" style="margin-left:3px;font-size:10px;opacity:0.5;cursor:pointer;">&#9998;</span>
                                         <select class="color-edit-select" style="display:none;">
                                             ${allColors.map(color => `<option value="${color}" ${color === displayColor ? 'selected' : ''}>${color}</option>`).join('')}
                                         </select>
@@ -1002,8 +1033,8 @@ if (noteEl) noteEl.value = outfit.note || '';
                         
                         // Click to add to canvas (optional convenience feature)
                         tile.addEventListener('click', (e) => {
-                            // Don't trigger if clicking on delete button or color editor
-                            if (e.target.closest('.tile-delete') || e.target.closest('.color-editable') || e.target.closest('.source-link')) {
+                            // Don't trigger if clicking on delete button, category editor, or color editor
+                            if (e.target.closest('.tile-delete') || e.target.closest('.category-editable') || e.target.closest('.color-editable') || e.target.closest('.source-link')) {
                                 return;
                             }
                             
@@ -1024,6 +1055,47 @@ if (noteEl) noteEl.value = outfit.note || '';
                                 console.log('Deleting wardrobe item:', item.id);
                                 deleteWardrobeItem(item.id);
                             });
+                        }
+
+                        // Category (type) editing functionality
+                        const categoryEditable = tile.querySelector('.category-editable');
+                        const categorySelect = tile.querySelector('.category-edit-select');
+                        const categoryText = tile.querySelector('.category-text');
+
+                        if (categoryEditable && categorySelect) {
+                            let isCatEditing = false;
+
+                            categoryEditable.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                if (!isCatEditing) {
+                                    isCatEditing = true;
+                                    if (categoryText) categoryText.style.display = 'none';
+                                    const editIcon = categoryEditable.querySelector('.edit-icon');
+                                    if (editIcon) editIcon.style.display = 'none';
+                                    categorySelect.style.display = 'inline-block';
+                                    categorySelect.style.minWidth = '100px';
+                                    setTimeout(() => categorySelect.focus(), 10);
+                                }
+                            });
+
+                            categorySelect.addEventListener('change', async (event) => {
+                                event.stopPropagation();
+                                const newCategory = event.target.value;
+                                await updateItemCategory(item.id, newCategory);
+                                isCatEditing = false;
+                            });
+
+                            categorySelect.addEventListener('blur', () => {
+                                if (isCatEditing) {
+                                    isCatEditing = false;
+                                    categorySelect.style.display = 'none';
+                                    if (categoryText) categoryText.style.display = 'inline';
+                                    const editIcon = categoryEditable.querySelector('.edit-icon');
+                                    if (editIcon) editIcon.style.display = '';
+                                }
+                            });
+
+                            categoryEditable.addEventListener('mousedown', (e) => e.stopPropagation());
                         }
 
                         // Color editing functionality
@@ -1052,9 +1124,11 @@ if (noteEl) noteEl.value = outfit.note || '';
                                 const newColor = event.target.value;
                                 // Generate a simple hex color based on color name
                                 const colorMap = {
-                                    'Red': '#FF0000', 'Orange': '#FFA500', 'Yellow': '#FFFF00',
-                                    'Green': '#008000', 'Cyan': '#00FFFF', 'Blue': '#0000FF',
-                                    'Purple': '#800080', 'Pink': '#FFC0CB', 'Gray': '#808080',
+                                    'Red': '#E74C3C', 'Orange': '#E67E22', 'Yellow': '#F1C40F',
+                                    'Green': '#27AE60', 'Cyan': '#1ABC9C', 'Blue': '#3498DB',
+                                    'Purple': '#9B59B6', 'Pink': '#E91E90', 'Brown': '#8B4513',
+                                    'Navy': '#1B2A4A', 'Maroon': '#800020', 'Beige': '#D4B896',
+                                    'Cream': '#FFFDD0', 'Gray': '#808080',
                                     'Black': '#000000', 'White': '#FFFFFF', 'Unknown': '#808080'
                                 };
                                 const newColorHex = colorMap[newColor] || item.colorHex || '#808080';

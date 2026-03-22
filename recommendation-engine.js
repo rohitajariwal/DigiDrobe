@@ -40,6 +40,8 @@
             colorMood: "relaxed",
             maxItems: 3,
             layerChance: 0.3,
+            preferDress: false,
+            dressBonus: 0,
         },
         formal: {
             label: "Formal",
@@ -48,6 +50,8 @@
             colorMood: "subdued",
             maxItems: 3,
             layerChance: 0.7,
+            preferDress: true,
+            dressBonus: 8,
         },
         party: {
             label: "Party",
@@ -56,6 +60,8 @@
             colorMood: "vibrant",
             maxItems: 3,
             layerChance: 0.4,
+            preferDress: true,
+            dressBonus: 12,
         },
         work: {
             label: "Work",
@@ -64,6 +70,8 @@
             colorMood: "subdued",
             maxItems: 3,
             layerChance: 0.5,
+            preferDress: true,
+            dressBonus: 5,
         },
         date: {
             label: "Date Night",
@@ -72,6 +80,8 @@
             colorMood: "warm",
             maxItems: 3,
             layerChance: 0.3,
+            preferDress: true,
+            dressBonus: 15,
         },
         sporty: {
             label: "Sporty",
@@ -80,6 +90,38 @@
             colorMood: "vibrant",
             maxItems: 2,
             layerChance: 0.3,
+            preferDress: false,
+            dressBonus: 0,
+        },
+        wedding: {
+            label: "Wedding",
+            description: "Elegant wedding guest outfits",
+            preferredCategories: { tops: ["Shirt"], bottoms: ["Trouser/Jeans", "Skirt"], layers: ["Jacket"] },
+            colorMood: "subdued",
+            maxItems: 3,
+            layerChance: 0.5,
+            preferDress: true,
+            dressBonus: 18,
+        },
+        brunch: {
+            label: "Brunch",
+            description: "Chic and relaxed weekend looks",
+            preferredCategories: { tops: ["Top/T-Shirt", "Shirt"], bottoms: ["Skirt", "Trouser/Jeans"], layers: ["Jacket"] },
+            colorMood: "relaxed",
+            maxItems: 3,
+            layerChance: 0.3,
+            preferDress: true,
+            dressBonus: 10,
+        },
+        cocktail: {
+            label: "Cocktail",
+            description: "Sophisticated evening event outfits",
+            preferredCategories: { tops: ["Shirt", "Top/T-Shirt"], bottoms: ["Skirt", "Trouser/Jeans"], layers: ["Jacket"] },
+            colorMood: "vibrant",
+            maxItems: 3,
+            layerChance: 0.4,
+            preferDress: true,
+            dressBonus: 15,
         },
     };
 
@@ -245,6 +287,11 @@
             const colors = [dress.color || "Unknown"];
             let score = 80;
 
+            // Boost score for dress-preferred occasions
+            if (profile.preferDress && profile.dressBonus) {
+                score += profile.dressBonus;
+            }
+
             if (season && SEASON_COLORS[season]) {
                 if (SEASON_COLORS[season].preferred.includes(dress.color)) score += 5;
             }
@@ -258,7 +305,8 @@
             };
 
             // Optionally add a jacket
-            if (categorized.layers.length > 0 && Math.random() < 0.4) {
+            const layerChanceForDress = profile.preferDress ? Math.max(0.4, profile.layerChance) : 0.4;
+            if (categorized.layers.length > 0 && Math.random() < layerChanceForDress) {
                 const layer = categorized.layers[Math.floor(Math.random() * categorized.layers.length)];
                 outfit.items.push(layer);
                 outfit.colors.push(layer.color || "Unknown");
@@ -303,8 +351,8 @@
         else if (month >= 8 && month <= 10) season = "autumn";
         else season = "winter";
 
-        // Generate recommendations for multiple occasions
-        const occasions = ["casual", "work", "formal", "party"];
+        // Generate recommendations for multiple occasions including dress-friendly ones
+        const occasions = ["casual", "work", "formal", "party", "date", "wedding", "brunch", "cocktail"];
         const all = [];
 
         occasions.forEach((occ) => {
