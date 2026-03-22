@@ -5,8 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>DigiDrobe — Start</title>
   <script>
-    // Always start at login for a clean flow
-    window.location.replace('login.html');
+    // If already logged in go to dashboard, otherwise login
+    if (localStorage.getItem('currentUser')) {
+      window.location.replace('dashboard.html');
+    } else {
+      window.location.replace('login.html');
+    }
   </script>
 </head>
 <body></body>
