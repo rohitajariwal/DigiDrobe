@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>DigiDrobe — Studio</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+    <!-- ================= TOP BAR ================= -->
+    <nav class="dash-nav">
+        <div class="dash-nav-left">
+            <h1 class="brand-sm">DigiDrobe</h1>
+        </div>
+        <div class="dash-nav-links">
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="main.html" class="nav-link active">Studio</a>
+            <a href="profile.html" class="nav-link">Profile</a>
+        </div>
+        <div class="dash-nav-right">
+            <span id="modelStatus" class="nav-user muted">Model: checking…</span>
+            <a id="userEmail" class="nav-user" href="profile.html">Not logged in</a>
+            <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
+        </div>
+    </nav>
+
+    <!-- ================= MAIN CONTAINER ================= -->
+    <div class="container">
+
+        <!-- ========== LEFT SIDEBAR ========== -->
+        <aside class="left-sidebar">
+
+            <section class="card">
+                <p class="tiny muted">Welcome back</p>
+                <h3 id="profileGreeting">Hi there!</h3>
+                <p class="muted">Curate today's look from your wardrobe.</p>
+                <span id="wardrobeCount" class="tiny muted">0 items</span>
+            </section>
+
+            <section class="card">
+                <label class="muted">Upload clothes</label>
+                <input id="fileInput" type="file" accept="image/*" multiple />
+                <p class="tiny muted">Upload images — classifier will label (if model present)</p>
+            </section>
+
+            <!-- ===== WARDROBE (CRITICAL FIX) ===== -->
+            <section class="card">
+                <h3>Your wardrobe</h3>
+
+                <label class="tiny muted">Filter by category</label>
+                <select id="categoryFilter">
+                    <option value="all">All categories</option>
+                </select>
+
+                <label class="tiny muted">Filter by color</label>
+                <select id="colorFilter">
+                    <option value="all">All colors</option>
+                </select>
+
+                <!-- THIS ID IS REQUIRED -->
+                <div id="wardrobeList" class="list"></div>
+            </section>
+
+        </aside>
+
+        <!-- ========== MIDDLE: FLAT-LAY STYLING CANVAS ========== -->
+        <main class="middle-section">
+            <div id="stylingCanvas" class="styling-canvas">
+                <div class="canvas-header">
+                    <h3>Style Your Outfit</h3>
+                    <div class="canvas-actions">
+                        <button id="autoArrangeBtn" class="btn-ghost tiny" type="button" title="Auto-arrange items into outfit layout">Auto Arrange</button>
+                        <button id="clearOutfitBtn" class="btn-ghost tiny" type="button">Clear All</button>
+                        <button id="saveOutfitBtn" class="btn-main tiny" type="button">Save Outfit</button>
+                        <button id="exportOutfitBtn" class="btn-ghost tiny" type="button" title="Download outfit as image">Export</button>
+                    </div>
+                    <div class="outfit-note-wrapper">
+                        <textarea id="outfitNote" placeholder="Add outfit details (occasion, styling notes...)" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="canvas-zoom-controls">
+                    <button id="zoomOutBtn" class="btn-ghost tiny" type="button" title="Zoom out">−</button>
+                    <span id="zoomLevel" class="tiny muted">100%</span>
+                    <button id="zoomInBtn" class="btn-ghost tiny" type="button" title="Zoom in">+</button>
+                    <button id="zoomResetBtn" class="btn-ghost tiny" type="button" title="Reset zoom">Reset</button>
+                    <select id="canvasBgSelect" class="canvas-bg-select" title="Canvas background">
+                        <option value="default">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="white">White</option>
+                        <option value="grid">Grid</option>
+                    </select>
+                </div>
+                
+                <!-- Free-form 2D Canvas -->
+                <div id="flatLayCanvas" class="flat-lay-canvas">
+                    <div class="canvas-empty-state">
+                        <p>Drag clothing items from your wardrobe to create your outfit</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========== RIGHT SIDEBAR ========== -->
+        <aside class="right-sidebar">
+
+            <section class="card">
+                <label class="muted">Import from product image URL</label>
+                <input
+  type="text"
+  id="productUrl"
+  placeholder="Paste product image URL"
+>
+<small class="hint">
+  Tip: Open product → right-click on image → “Copy image address”
+</small>
+
+                <button id="importProductBtn" class="btn-main" type="button">
+                    Import product
+                </button>
+                <div id="importMsg" class="tiny muted"></div>
+            </section>
+
+            <section class="card">
+                <h3>Saved Outfits</h3>
+                <div id="savedOutfitsList" class="saved-outfits-list">
+                    <p class="tiny muted">No saved outfits yet. Create an outfit and click "Save Outfit" to save it here.</p>
+                </div>
+            </section>
+
+            <!-- Outfit Recommendations -->
+            <section class="card reco-panel">
+                <h4>Quick Recommendations</h4>
+                <p class="tiny muted">AI-generated outfit suggestions from your wardrobe</p>
+                <div id="recoMiniGrid" class="reco-mini-grid"></div>
+                <a href="dashboard.html" class="btn-ghost tiny" style="margin-top:10px;display:block;text-align:center;text-decoration:none;">View All on Dashboard</a>
+            </section>
+
+        </aside>
+    </div>
+
+    <!-- ================= SCRIPTS (ORDER MATTERS) ================= -->
+
+    <!-- TF / TM -->
+    <script src="libs/tf.min.js"></script>
+    <script src="libs/teachablemachine-image.min.js"></script>
+
+
+
+    <!-- ================= INIT ================= -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // show user
+            const user = localStorage.getItem("currentUser");
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+            document.getElementById("userEmail").textContent = user;
+
+            // logout
+            document.getElementById("logoutBtn").onclick = () => {
+                localStorage.removeItem("currentUser");
+                location.href = "login.html";
+            };
+        });
+    </script>
+<div id="floatingToolbar" class="floating-toolbar hidden">
+  <button data-action="front" title="Bring forward">⬆</button>
+  <button data-action="back" title="Send backward">⬇</button>
+  <button data-action="rotateLeft" title="Rotate left">↶</button>
+  <button data-action="rotateRight" title="Rotate right">↷</button>
+  <button data-action="flipH" title="Flip horizontal">⇔</button>
+  <button data-action="flipV" title="Flip vertical">⇕</button>
+  <button data-action="duplicate" title="Duplicate">⧉</button>
+  <button data-action="remove" title="Remove">🗑</button>
+</div>
+
+<script src="ml-classifier.js"></script>
+<script src="api-client.js"></script>
+<script src="local-db-plain.js"></script>
+<script src="color-classifier.js"></script>
+<script src="cloth-extractor.js"></script>
+<script src="product-importer.js"></script>
+<script src="recommendation-engine.js"></script>
+<script src="app.js"></script>
+
+
+
+</body>
+</html>
