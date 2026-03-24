@@ -28,11 +28,9 @@
         global.DB.lastError = msg || "";
     }
 
-    // Check if API backend object exists AND server was confirmed reachable
+    // Check if API backend is reachable
     function hasApi() {
-        // ApiClient must exist AND server must have been confirmed reachable (not just unknown)
-        return !!(global.ApiClient && global.ApiClient.isServerConfirmedAvailable &&
-                  global.ApiClient.isServerConfirmedAvailable());
+        return !!(global.ApiClient);
     }
 
     // ---- User operations (localStorage fallback) ----
@@ -58,28 +56,13 @@
         return true;
     }
 
-    // FIX: login now supports both plain-text (localStorage users) and bcrypt-hashed
-    // (API-created users). For localStorage fallback we just do plain compare;
-    // bcrypt users must go through the API login flow (login.html handles that).
     function login(email, pass) {
         setLastError("");
         const normalizedEmail = normalizeEmail(email);
         if (!isValidEmail(normalizedEmail)) { setLastError("Please enter a valid email address."); return false; }
         const users = JSON.parse(localStorage.getItem("users") || "[]");
-        const u = users.find((x) => normalizeEmail(x.email) === normalizedEmail);
-        if (!u) { setLastError("Incorrect email or password"); return false; }
-        // Support plain-text passwords (localStorage-created accounts)
-        // Bcrypt hashes start with $2b$ or $2a$ — those can only be verified server-side
-        const isBcrypt = u.password && (u.password.startsWith("$2b$") || u.password.startsWith("$2a$"));
-        if (isBcrypt) {
-            // Can't verify bcrypt client-side — direct to API login
-            setLastError("Please use the server-backed login (start the backend server).");
-            return false;
-        }
-        if (u.password === pass) {
-            localStorage.setItem("currentUser", normalizedEmail);
-            return true;
-        }
+        const u = users.find((x) => normalizeEmail(x.email) === normalizedEmail && x.password === pass);
+        if (u) { localStorage.setItem("currentUser", normalizedEmail); return true; }
         setLastError("Incorrect email or password");
         return false;
     }
@@ -96,7 +79,6 @@
     function addClothesObjects(email, items) {
         return new Promise(async (resolve) => {
             const key = "wardrobe_" + email;
-            // FIX: always read from localStorage first so we never lose existing items
             const wardrobe = JSON.parse(localStorage.getItem(key) || "[]");
             items.forEach((it) => {
                 const safe = {
@@ -112,10 +94,9 @@
                     bgRemoved: !!it.bgRemoved,
                 };
                 wardrobe.push(safe);
-                // Optionally sync to API if server is confirmed available
+                // Also sync to API if available
                 if (hasApi()) ApiClient.addWardrobeItem(email, safe).catch(() => {});
             });
-            // FIX: always persist to localStorage immediately — source of truth
             persistWardrobe(email, wardrobe);
             resolve(wardrobe);
         });
@@ -149,28 +130,18 @@
     }
 
     async function getWardrobe(email) {
-        // FIX: always read localStorage first — this is the reliable source of truth
-        // when running without a backend server (static file mode)
-        const localItems = JSON.parse(localStorage.getItem("wardrobe_" + email) || "[]");
-
-        // Only attempt API if server was positively confirmed reachable
+        // Try API first, fallback to localStorage
         if (hasApi()) {
             try {
                 const items = await ApiClient.getWardrobe(email);
                 if (items && items.length > 0) {
-                    // Merge API items with local items (API wins for same IDs)
-                    const apiIds = new Set(items.map((i) => i.id));
-                    const localOnly = localItems.filter((i) => !apiIds.has(i.id));
-                    const merged = [...items, ...localOnly];
-                    persistWardrobe(email, merged);
-                    return merged;
+                    // Sync to localStorage as cache
+                    persistWardrobe(email, items);
+                    return items;
                 }
-                // API returned empty but we have local items — keep local
-                if (localItems.length > 0) return localItems;
-            } catch (e) { /* fallback to local */ }
+            } catch (e) { /* fallback */ }
         }
-
-        return localItems;
+        return JSON.parse(localStorage.getItem("wardrobe_" + email) || "[]");
     }
 
     function removeClothing(email, itemId) {
@@ -218,7 +189,7 @@
     }
 
     async function getUser(email) {
-        // Try API first only if server confirmed available
+        // Try API first
         if (hasApi()) {
             try {
                 const user = await ApiClient.getUser(email);
