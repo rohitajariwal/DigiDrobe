@@ -277,14 +277,11 @@ app.delete('/api/outfits/:email/:outfitId', (req, res) => {
 
 // ---- Start Server ----
 
-(async () => {
-    await db.getDb(); // Initialize SQLite database
-    app.listen(PORT, () => {
-        console.log(`DigiDrobe server running on http://localhost:${PORT}`);
-        console.log(`Open http://localhost:${PORT}/login.html to get started`);
-        if (!process.env.SMTP_HOST) {
-            console.log('\nNote: SMTP not configured. OTP codes will be printed to console.');
-            console.log('To enable email, set: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS');
-        }
-    });
-})();
+app.listen(PORT, () => {
+    console.log(`DigiDrobe server running on http://localhost:${PORT}`);
+    console.log(`Open http://localhost:${PORT}/login.html to get started`);
+    if (!process.env.SMTP_HOST) {
+        console.log('\nNote: SMTP not configured. OTP codes will be printed to console.');
+        console.log('To enable email, set: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS');
+    }
+});
