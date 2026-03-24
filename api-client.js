@@ -6,18 +6,34 @@
     'use strict';
 
     const API_BASE = window.location.origin + '/api';
-    let serverAvailable = null; // null = unknown, true/false
+    // FIX: Use explicit three-state: null=unknown, true=confirmed up, false=confirmed down
+    let serverAvailable = null;
+    // FIX: Add a dedicated /ping endpoint check (not /user/ping-test which may 404
+    // and incorrectly set serverAvailable=true even when backend isn't serving /api routes)
+    const PING_URL = API_BASE + '/ping';
 
     async function checkServer() {
         if (serverAvailable !== null) return serverAvailable;
         try {
-            const resp = await fetch(API_BASE + '/user/ping-test', { method: 'GET' });
-            // Even a 404 means server is up
-            serverAvailable = true;
+            const resp = await fetch(PING_URL, { method: 'GET' });
+            // FIX: Only treat as available if we get a real 200 OK from /api/ping
+            // A 404 means server is up but the route doesn't exist — not good enough
+            serverAvailable = resp.ok;  // true only on 2xx
         } catch (e) {
             serverAvailable = false;
         }
         return serverAvailable;
+    }
+
+    // FIX: Expose server status so local-db-plain.js can check it reliably
+    function isServerConfirmedAvailable() {
+        return serverAvailable === true;
+    }
+
+    // FIX: Allow resetting the cache so server status can be re-checked
+    // (useful after network changes or app restarts)
+    function resetServerCache() {
+        serverAvailable = null;
     }
 
     // ---- Wardrobe API ----
@@ -136,6 +152,8 @@
 
     global.ApiClient = {
         checkServer,
+        isServerConfirmedAvailable,
+        resetServerCache,
         getWardrobe,
         addWardrobeItem,
         updateWardrobeItem,
