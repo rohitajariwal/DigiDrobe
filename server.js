@@ -1,7 +1,7 @@
-// server.js — DigiDrobe Express + sql.js SQLite backend
+// server.js — DigiDrobe Express + SQLite backend
 const express = require('express');
 const path = require('path');
-const bcrypt = require('bcryptjs'); // uses bcryptjs (no native build required)
+const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const Database = require('./database');
 
@@ -13,6 +13,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
 
 // ---- Health / Ping ----
+// FIX: Add a dedicated /api/ping route that returns 200 OK
+// api-client.js now checks this instead of a non-existent /user/ping-test
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', timestamp: Date.now() });
 });
@@ -22,14 +24,11 @@ app.get('/api/ping', (req, res) => {
 app.post('/api/auth/signup', async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        if (!name || !email || !password)
-            return res.status(400).json({ error: 'Missing fields' });
+        if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
         const existing = await Database.getUserByEmail(email);
-        if (existing)
-            return res.status(409).json({ error: 'User already exists' });
+        if (existing) return res.status(409).json({ error: 'User already exists' });
         const hash = await bcrypt.hash(password, SALT_ROUNDS);
-        const ok = await Database.createUser({ name, email, password: hash });
-        if (!ok) return res.status(409).json({ error: 'User already exists' });
+        await Database.createUser({ name, email, password: hash });
         res.json({ success: true });
     } catch (e) {
         console.error('signup error', e);
@@ -40,15 +39,11 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password)
-            return res.status(400).json({ error: 'Missing fields' });
+        if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
         const user = await Database.getUserByEmail(email);
-        if (!user)
-            return res.status(401).json({ error: 'Invalid credentials' });
+        if (!user) return res.status(401).json({ error: 'Invalid credentials' });
         const match = await bcrypt.compare(password, user.password);
-        if (!match)
-            return res.status(401).json({ error: 'Invalid credentials' });
-        // Set currentUser in localStorage via response so frontend can pick it up
+        if (!match) return res.status(401).json({ error: 'Invalid credentials' });
         res.json({ success: true, email: user.email, name: user.name });
     } catch (e) {
         console.error('login error', e);
@@ -56,21 +51,24 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// OTP — send
+// OTP send
 app.post('/api/auth/send-otp', async (req, res) => {
     try {
-        const { email, purpose } = req.body;
+        const { email } = req.body;
         if (!email) return res.status(400).json({ error: 'Email required' });
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-        await Database.upsertOtp(email, code, expiresAt, purpose || 'verify');
-        // Try email; fall back to console log
+        const expiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+        await Database.upsertOtp(email, code, expiry);
+        // Try to send email; fall back to console
         try {
             const transporter = nodemailer.createTransport({
                 host: process.env.SMTP_HOST || 'smtp.gmail.com',
                 port: parseInt(process.env.SMTP_PORT || '587'),
                 secure: false,
-                auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+                auth: {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASS,
+                },
             });
             await transporter.sendMail({
                 from: process.env.SMTP_USER || 'noreply@digidrobe.com',
@@ -78,9 +76,8 @@ app.post('/api/auth/send-otp', async (req, res) => {
                 subject: 'DigiDrobe Verification Code',
                 text: `Your verification code is: ${code}\n\nExpires in 10 minutes.`,
             });
-            console.log(`[OTP sent to ${email}]`);
         } catch (mailErr) {
-            console.log(`[OTP for ${email}]: ${code}  (email send failed: ${mailErr.message})`);
+            console.log(`[OTP for ${email}]: ${code}`);
         }
         res.json({ success: true });
     } catch (e) {
@@ -89,17 +86,17 @@ app.post('/api/auth/send-otp', async (req, res) => {
     }
 });
 
-// OTP — verify
+// OTP verify
 app.post('/api/auth/verify-otp', async (req, res) => {
     try {
-        const { email, code, purpose } = req.body;
+        const { email, code } = req.body;
         if (!email || !code) return res.status(400).json({ error: 'Missing fields' });
-        const record = await Database.getOtp(email, purpose || 'verify');
+        const record = await Database.getOtp(email);
         if (!record) return res.status(400).json({ error: 'No OTP found' });
         if (record.code !== code) return res.status(400).json({ error: 'Invalid OTP' });
-        if (new Date(record.expires_at) < new Date()) return res.status(400).json({ error: 'OTP expired' });
+        if (new Date(record.expiry) < new Date()) return res.status(400).json({ error: 'OTP expired' });
         await Database.markEmailVerified(email);
-        await Database.deleteOtp(email, purpose || 'verify');
+        await Database.deleteOtp(email);
         res.json({ success: true });
     } catch (e) {
         console.error('verify-otp error', e);
@@ -111,8 +108,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 app.post('/api/auth/reset-password', async (req, res) => {
     try {
         const { email, newPassword } = req.body;
-        if (!email || !newPassword)
-            return res.status(400).json({ error: 'Missing fields' });
+        if (!email || !newPassword) return res.status(400).json({ error: 'Missing fields' });
         const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
         await Database.updatePassword(email, hash);
         res.json({ success: true });
@@ -180,7 +176,7 @@ app.post('/api/wardrobe/:email', async (req, res) => {
 app.put('/api/wardrobe/:email/:itemId', async (req, res) => {
     try {
         const { updates } = req.body;
-        await Database.updateWardrobeItem(req.params.email, req.params.itemId, updates || {});
+        await Database.updateWardrobeItem(req.params.email, req.params.itemId, updates);
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: 'Server error' });
@@ -211,7 +207,7 @@ app.post('/api/outfits/:email', async (req, res) => {
     try {
         const { name, note, items } = req.body;
         const result = await Database.saveOutfit(req.params.email, name, note, items);
-        res.json(result || { success: true });
+        res.json(result);
     } catch (e) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -227,14 +223,7 @@ app.delete('/api/outfits/:email/:outfitId', async (req, res) => {
 });
 
 // ---- Start ----
-Database.getDb()
-    .then(() => {
-        app.listen(PORT, () => {
-            console.log(`\n✅ DigiDrobe server running at http://localhost:${PORT}`);
-            console.log(`   Open: http://localhost:${PORT}/login.html\n`);
-        });
-    })
-    .catch((err) => {
-        console.error('❌ Failed to initialize database:', err);
-        process.exit(1);
-    });
+app.listen(PORT, () => {
+    console.log(`DigiDrobe server running at http://localhost:${PORT}`);
+    console.log('Open http://localhost:' + PORT + '/login.html to get started.');
+});
