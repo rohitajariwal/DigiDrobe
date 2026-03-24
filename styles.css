@@ -509,21 +509,22 @@ select:focus {
 
 
 /* =========================================
-   WARDROBE
+   WARDROBE (Studio sidebar tiles)
    ========================================= */
 
 .list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .tile {
+    position: relative;
     display: flex;
-    gap: 12px;
-    align-items: center;
-    padding: 12px;
-    border-radius: 16px;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
@@ -531,16 +532,178 @@ select:focus {
 }
 
 .tile:hover {
-    transform: translateY(-3px);
     border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .thumb {
-    width: 72px;
-    height: 72px;
-    border-radius: 18px;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
     object-fit: contain;
-    border: 2px dashed rgba(168, 124, 124, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    flex-shrink: 0;
+}
+
+/* Tile delete button */
+.tile-delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(200, 60, 60, 0.8);
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 2;
+}
+
+.tile:hover .tile-delete {
+    opacity: 1;
+}
+
+.tile-delete:hover {
+    background: rgba(220, 40, 40, 1);
+}
+
+/* Tile metadata */
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+    padding-right: 16px;
+}
+
+.tile-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* Type/Color edit rows */
+.tile-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+}
+
+.tile-field-label {
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 32px;
+    flex-shrink: 0;
+}
+
+.category-editable,
+.color-editable {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.category-editable:hover,
+.color-editable:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.category-text,
+.color-text {
+    font-size: 11px;
+    color: var(--text-main);
+}
+
+.tile-edit-icon {
+    font-size: 9px;
+    opacity: 0.4;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.category-editable:hover .tile-edit-icon,
+.color-editable:hover .tile-edit-icon {
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* Inline edit select (studio tiles) */
+.tile-select {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 11px;
+    padding: 3px 6px;
+    max-width: 120px;
+    cursor: pointer;
+    width: auto;
+}
+
+.tile-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(168, 124, 124, 0.3);
+}
+
+.color-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.redetect-color-btn {
+    width: auto;
+    padding: 1px 5px;
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    cursor: pointer;
+    color: inherit;
+    line-height: 1;
+}
+
+.redetect-color-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tile-source {
+    margin-top: 2px;
+}
+
+.source-link {
+    font-size: 10px;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.source-link:hover {
+    text-decoration: underline;
 }
 
 

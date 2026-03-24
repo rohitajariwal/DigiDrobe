@@ -233,6 +233,7 @@ const floatingToolbar = document.getElementById('floatingToolbar');
                     // 6. Prepare item object - MUST contain: id, dataURL, category, color
                     const item = {
                         id: Date.now() + '_' + f.name,
+                        name: 'Uploaded',
                         dataURL: dataURL,
                         category: category,
                         color: color,
@@ -987,31 +988,34 @@ if (noteEl) noteEl.value = outfit.note || '';
 
                         // Build tile HTML with thumbnail, category, and color
                         tile.innerHTML = `
-                            <img src="${item.dataURL}" class="thumb" alt="${item.name || 'Clothing item'}" onerror="this.style.display='none'; console.error('Image failed to load for item:', '${item.id}');">
+                            <button class="tile-delete" type="button" aria-label="Remove item" title="Remove">×</button>
+                            <img src="${item.dataURL}" class="thumb" alt="${item.name || 'Clothing item'}" onerror="this.style.display='none';">
                             <div class="meta">
-                                <strong>${item.name || 'Unnamed item'}</strong>
-                                <div class="small muted meta-line">
-                                    <span class="category-editable" data-item-id="${item.id}" title="Click to change type">
+                                <strong class="tile-name">${item.name || 'Uploaded'}</strong>
+                                <div class="tile-edit-row" data-field="category">
+                                    <span class="tile-field-label">Type</span>
+                                    <span class="category-editable" data-item-id="${item.id}">
                                         <span class="category-text">${displayCategory}</span>
-                                        <span class="edit-icon" style="margin-left:3px;font-size:10px;opacity:0.5;cursor:pointer;">&#9998;</span>
-                                        <select class="category-edit-select" style="display:none;">
+                                        <span class="tile-edit-icon">&#9998;</span>
+                                        <select class="category-edit-select tile-select">
                                             ${clothingCategories.map(cat => `<option value="${cat}" ${cat === displayCategory ? 'selected' : ''}>${cat}</option>`).join('')}
                                         </select>
                                     </span>
-                                    <span class="sep">•</span>
-                                    <span class="color-editable" data-item-id="${item.id}" title="Click to edit color">
+                                </div>
+                                <div class="tile-edit-row" data-field="color">
+                                    <span class="tile-field-label">Color</span>
+                                    <span class="color-editable" data-item-id="${item.id}">
                                         ${colorDot}
                                         <span class="color-text">${displayColor}</span>
-                                        <span class="edit-icon" style="margin-left:3px;font-size:10px;opacity:0.5;cursor:pointer;">&#9998;</span>
-                                        <select class="color-edit-select" style="display:none;">
+                                        <span class="tile-edit-icon">&#9998;</span>
+                                        <select class="color-edit-select tile-select">
                                             ${allColors.map(color => `<option value="${color}" ${color === displayColor ? 'selected' : ''}>${color}</option>`).join('')}
                                         </select>
-                                        ${displayColor === 'Unknown' ? `<button class="redetect-color-btn" data-item-id="${item.id}" title="Re-detect color" style="margin-left: 6px; padding: 2px 6px; font-size: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer; color: inherit;">↻</button>` : ''}
+                                        ${displayColor === 'Unknown' ? `<button class="redetect-color-btn" data-item-id="${item.id}" title="Re-detect color">↻</button>` : ''}
                                     </span>
-                                    ${sourceLink ? `<span class="sep">•</span><span>${sourceLink}</span>` : ''}
                                 </div>
-                            </div>
-                            <button class="tile-delete" type="button" aria-label="Remove ${item.name || 'item'}">×</button>`;
+                                ${sourceLink ? `<div class="tile-source">${sourceLink}</div>` : ''}
+                            </div>`;
 
                         // Make items draggable for 2D styling canvas
                         tile.draggable = true;
@@ -1235,7 +1239,7 @@ if (noteEl) noteEl.value = outfit.note || '';
             importMsgEl.textContent = 'Fetching product page…';
 
             const meta = await ProductImporter.fetchProductMeta(cleanUrl);
-            const name = meta.name || 'Imported item';
+            const name = meta.name || 'Imported';
             const imageUrl = (meta.imageUrls && meta.imageUrls[0]) ? meta.imageUrls[0] : '';
             const categoryFromHint = ProductImporter.mapToWardrobeCategory(`${meta.categoryHint || ''} ${name}`);
 

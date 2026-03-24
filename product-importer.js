@@ -50,7 +50,7 @@
     // At this point we trust the URL as an image; the actual download
     // + CORS handling happens later in imageUrlToDataUrlBestEffort.
     return {
-      name: 'Imported Image',
+      name: 'Imported',
       imageUrls: [cleanUrl],
       categoryHint: '',
       provider: 'image-url',

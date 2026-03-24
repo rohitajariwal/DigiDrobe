@@ -1,57 +1,3 @@
-<!-- <!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="UTF-8">
-    <title>Create Account</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-
-<body>
-    <div class="auth-box">
-        <h2>Create account</h2>
-
-        <form id="signupForm">
-            <input id="name" type="text" placeholder="Name" required>
-            <input id="email" type="email" placeholder="Email" required>
-            <input id="password" type="password" placeholder="Password" required>
-            <button type="submit">Sign up</button>
-        </form>
-
-        <p><a href="login.html">Already have account? Login</a></p>
-        <p id="msg"></p>
-    </div>
-
-    <script src="local-db-plain.js"></script>
-    <script>
-        document.getElementById("signupForm").addEventListener("submit", e => {
-            e.preventDefault();
-
-            const user = {
-                name: name.value,
-                email: email.value,
-                password: password.value
-            };
-
-            const ok = DB.createUser(user);
-
-            if (!ok) {
-                msg.textContent = "User already exists!";
-                msg.style.color = "red";
-                return;
-            }
-
-            msg.textContent = "Account created!";
-            msg.style.color = "lightgreen";
-            localStorage.setItem("currentUser", user.email);
-
-            setTimeout(() => location.href = "main.html", 800);
-        });
-    </script>
-</body>
-
-</html> -->
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -68,6 +14,7 @@
         <h1 class="brand">DigiDrobe</h1>
         <p class="login-title">Create your free account</p>
 
+        <!-- Step 1: Registration form -->
         <form id="signupForm" autocomplete="off">
           <label for="name">Full name</label>
           <input id="name" name="name" type="text" placeholder="Your name" required>
@@ -76,41 +23,57 @@
           <input id="email" name="email" type="email" placeholder="you@example.com" required>
 
           <label for="password">Password</label>
-          <input id="password" name="password" type="password" placeholder="create a password" required>
+          <input id="password" name="password" type="password" placeholder="Create a password (min 6 chars)" required minlength="6">
 
           <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
             <label style="font-weight: 600; margin-bottom: 12px; display: block;">Body Measurements (optional)</label>
             <p class="small muted" style="margin-bottom: 16px;">Enter your measurements for personalized recommendations</p>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
               <div>
                 <label for="heightInput" style="font-size: 13px; font-weight: 500;">Height (cm)</label>
-                <input id="heightInput" name="height" type="number" min="100" max="250" step="0.5" placeholder="170" style="width: 100%; padding: 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); color: var(--text-main); font-size: 14px;">
+                <input id="heightInput" name="height" type="number" min="100" max="250" step="0.5" placeholder="170">
               </div>
               <div>
                 <label for="chestInput" style="font-size: 13px; font-weight: 500;">Chest/Bust (cm)</label>
-                <input id="chestInput" name="chest" type="number" min="50" max="200" step="0.5" placeholder="90" style="width: 100%; padding: 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); color: var(--text-main); font-size: 14px;">
+                <input id="chestInput" name="chest" type="number" min="50" max="200" step="0.5" placeholder="90">
               </div>
             </div>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div>
                 <label for="waistInput" style="font-size: 13px; font-weight: 500;">Waist (cm)</label>
-                <input id="waistInput" name="waist" type="number" min="50" max="200" step="0.5" placeholder="72" style="width: 100%; padding: 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); color: var(--text-main); font-size: 14px;">
+                <input id="waistInput" name="waist" type="number" min="50" max="200" step="0.5" placeholder="72">
               </div>
               <div>
                 <label for="hipsInput" style="font-size: 13px; font-weight: 500;">Hips (cm)</label>
-                <input id="hipsInput" name="hips" type="number" min="50" max="200" step="0.5" placeholder="95" style="width: 100%; padding: 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); color: var(--text-main); font-size: 14px;">
+                <input id="hipsInput" name="hips" type="number" min="50" max="200" step="0.5" placeholder="95">
               </div>
             </div>
           </div>
 
           <button id="signupBtn" class="btn-auth" type="submit">Create account</button>
-
           <div id="msg" class="msg"></div>
-
           <p class="auth-small">Already a member? <a href="login.html">Log in</a></p>
         </form>
+
+        <!-- Step 2: OTP verification (hidden initially) -->
+        <div id="otpSection" style="display: none;">
+          <p class="small muted" style="margin-bottom: 16px;">We sent a 6-digit verification code to <strong id="otpEmailDisplay"></strong></p>
+
+          <label for="otpInput">Enter verification code</label>
+          <input id="otpInput" type="text" placeholder="123456" maxlength="6" pattern="\d{6}" required
+                 style="text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: 700;">
+
+          <button id="verifyOtpBtn" class="btn-auth" type="button">Verify & Create Account</button>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <button id="resendOtpBtn" class="btn-ghost" type="button" style="font-size: 12px; padding: 6px 12px;">Resend Code</button>
+            <button id="backToSignupBtn" class="btn-ghost" type="button" style="font-size: 12px; padding: 6px 12px;">Back</button>
+          </div>
+
+          <div id="otpMsg" class="msg"></div>
+        </div>
       </div>
     </div>
 
@@ -121,82 +84,135 @@
     </div>
   </div>
 
-  <script src="local-db-plain.js"></script>
   <script>
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    const API = window.location.origin + '/api';
+    let signupEmail = '';
+    let signupData = {};
+
+    const signupForm = document.getElementById('signupForm');
+    const otpSection = document.getElementById('otpSection');
+    const msgEl = document.getElementById('msg');
+    const otpMsg = document.getElementById('otpMsg');
+
+    signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      msgEl.textContent = '';
+
       const name = document.getElementById('name').value.trim();
-      const rawEmail = document.getElementById('email').value;
-      const email = (window.DB && typeof DB.normalizeEmail === 'function') ? DB.normalizeEmail(rawEmail) : (rawEmail || "").trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
       const password = document.getElementById('password').value;
-      const msgEl = document.getElementById('msg');
 
-      // Email validation
-      if (window.DB && typeof DB.isValidEmail === 'function') {
-        if (!DB.isValidEmail(email)) {
-          msgEl.textContent = 'Please enter a valid email address.';
-          msgEl.style.color = '#ff4b5c';
-          return;
-        }
-      }
-
-      // Collect measurements as structured object
-      const measurementsObj = {};
-      const height = parseFloat(document.getElementById('heightInput').value);
-      const chest = parseFloat(document.getElementById('chestInput').value);
-      const waist = parseFloat(document.getElementById('waistInput').value);
-      const hips = parseFloat(document.getElementById('hipsInput').value);
-      
-      if (height && !isNaN(height)) measurementsObj.height = height;
-      if (chest && !isNaN(chest)) measurementsObj.chest = chest;
-      if (waist && !isNaN(waist)) measurementsObj.waist = waist;
-      if (hips && !isNaN(hips)) measurementsObj.hips = hips;
-      
-      // Convert to JSON string for storage
-      const measurements = Object.keys(measurementsObj).length > 0 
-        ? JSON.stringify(measurementsObj) 
-        : '';
-
-      // Use DB.createUser or createUser helper if available
-      let ok = false;
-      try {
-        if (typeof createUser === 'function') {
-          ok = createUser({ name, email, password, measurements });
-        } else if (window.DB && typeof DB.createUser === 'function') {
-          ok = DB.createUser({ name, email, password, measurements });
-        } else {
-          // fallback: store simple user object using DB.addUser or localStorage
-          if (window.DB && typeof DB.addUser === 'function') {
-            DB.addUser({ name, email, password, measurements });
-            ok = true;
-          } else {
-            // last resort: localStorage (not preferred)
-            const users = JSON.parse(localStorage.getItem('DD_users') || '{}');
-            if (users[email]) {
-              ok = false;
-            } else {
-              users[email] = { name, email, password, measurements, wardrobe: [] };
-              localStorage.setItem('DD_users', JSON.stringify(users));
-              ok = true;
-            }
-          }
-        }
-      } catch (err) {
-        console.error('signup helper error', err);
-      }
-
-      if (!ok) {
-        msgEl.textContent = (window.DB && DB.lastError) ? DB.lastError : 'User already exists or signup failed';
+      if (password.length < 6) {
+        msgEl.textContent = 'Password must be at least 6 characters.';
         msgEl.style.color = '#ff4b5c';
         return;
       }
 
-      localStorage.setItem('currentUser', email);
-      msgEl.textContent = 'Account created — redirecting…';
-      msgEl.style.color = '#540863';
-      setTimeout(() => window.location.href = 'dashboard.html', 600);
+      const measurementsObj = {};
+      const h = parseFloat(document.getElementById('heightInput').value);
+      const c = parseFloat(document.getElementById('chestInput').value);
+      const w = parseFloat(document.getElementById('waistInput').value);
+      const hp = parseFloat(document.getElementById('hipsInput').value);
+      if (h && !isNaN(h)) measurementsObj.height = h;
+      if (c && !isNaN(c)) measurementsObj.chest = c;
+      if (w && !isNaN(w)) measurementsObj.waist = w;
+      if (hp && !isNaN(hp)) measurementsObj.hips = hp;
+      const measurements = Object.keys(measurementsObj).length > 0 ? JSON.stringify(measurementsObj) : '';
+
+      signupData = { name, email, password, measurements };
+      signupEmail = email;
+
+      const btn = document.getElementById('signupBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sending verification code...';
+
+      try {
+        const resp = await fetch(API + '/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(signupData),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          msgEl.textContent = data.error || 'Signup failed.';
+          msgEl.style.color = '#ff4b5c';
+          btn.disabled = false;
+          btn.textContent = 'Create account';
+          return;
+        }
+
+        signupForm.style.display = 'none';
+        otpSection.style.display = 'block';
+        document.getElementById('otpEmailDisplay').textContent = email;
+        document.getElementById('otpInput').focus();
+      } catch (err) {
+        msgEl.textContent = 'Network error. Make sure the server is running.';
+        msgEl.style.color = '#ff4b5c';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+    });
+
+    document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
+      const code = document.getElementById('otpInput').value.trim();
+      otpMsg.textContent = '';
+      if (code.length !== 6) {
+        otpMsg.textContent = 'Please enter the 6-digit code.';
+        otpMsg.style.color = '#ff4b5c';
+        return;
+      }
+
+      try {
+        const resp = await fetch(API + '/auth/verify-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: signupEmail, code }),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          otpMsg.textContent = data.error || 'Verification failed.';
+          otpMsg.style.color = '#ff4b5c';
+          return;
+        }
+
+        otpMsg.textContent = 'Account verified! Redirecting...';
+        otpMsg.style.color = '#27AE60';
+        localStorage.setItem('currentUser', signupEmail);
+        setTimeout(() => window.location.href = 'dashboard.html', 800);
+      } catch (err) {
+        otpMsg.textContent = 'Network error.';
+        otpMsg.style.color = '#ff4b5c';
+      }
+    });
+
+    document.getElementById('resendOtpBtn').addEventListener('click', async () => {
+      otpMsg.textContent = 'Resending...';
+      otpMsg.style.color = '#A87C7C';
+      try {
+        const resp = await fetch(API + '/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(signupData),
+        });
+        const data = await resp.json();
+        otpMsg.textContent = resp.ok ? 'New code sent!' : (data.error || 'Failed to resend.');
+        otpMsg.style.color = resp.ok ? '#27AE60' : '#ff4b5c';
+      } catch (err) {
+        otpMsg.textContent = 'Network error.';
+        otpMsg.style.color = '#ff4b5c';
+      }
+    });
+
+    document.getElementById('backToSignupBtn').addEventListener('click', () => {
+      otpSection.style.display = 'none';
+      signupForm.style.display = 'block';
+    });
+
+    document.getElementById('otpInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('verifyOtpBtn').click();
     });
   </script>
 </body>
 </html>
-

@@ -1,148 +1,226 @@
-<!-- <!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-
-<body>
-    <div class="auth-box">
-        <h2>Login</h2>
-
-        <form id="loginForm">
-            <input id="email" type="email" placeholder="Email" required>
-            <input id="password" type="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-
-        <p><a href="signup.html">Create new account</a></p>
-        <p id="msg"></p>
-    </div>
-
-    <script src="local-db-plain.js"></script>
-    <script>
-        document.getElementById("loginForm").addEventListener("submit", e => {
-            e.preventDefault();
-
-            const ok = DB.login(email.value, password.value);
-            if (!ok) {
-                msg.textContent = "Incorrect email or password";
-                msg.style.color = "red";
-                return;
-            }
-
-            msg.textContent = "Login successful!";
-            msg.style.color = "lightgreen";
-
-            setTimeout(() => location.href = "main.html", 700);
-        });
-    </script>
-</body>
-
-</html> -->
-
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DigiDrobe — Login</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body class="auth-page">
 
     <div class="login-container">
         <div class="login-left">
             <div class="login-card">
                 <h1 class="brand">DigiDrobe</h1>
-                <p class="login-title">Welcome back — sign in</p>
 
-                <form id="loginForm" autocomplete="off">
-                    <label for="email">Email</label>
-                    <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                <!-- Login Form -->
+                <div id="loginSection">
+                    <p class="login-title">Welcome back — sign in</p>
+                    <form id="loginForm" autocomplete="off">
+                        <label for="email">Email</label>
+                        <input id="email" name="email" type="email" placeholder="you@example.com" required>
 
-                    <label for="password">Password</label>
-                    <input id="password" name="password" type="password" placeholder="password" required>
+                        <label for="password">Password</label>
+                        <input id="password" name="password" type="password" placeholder="password" required>
 
-                    <div class="login-row">
-                        <label class="remember"><input type="checkbox" id="rememberMe"> Remember</label>
-                        <a class="forgot" href="#">Forgot?</a>
-                    </div>
+                        <div class="login-row">
+                            <label class="remember"><input type="checkbox" id="rememberMe"> Remember</label>
+                            <a class="forgot" href="#" id="showForgotBtn">Forgot?</a>
+                        </div>
 
-                    <button id="loginBtn" class="btn-auth" type="submit">Log In</button>
+                        <button id="loginBtn" class="btn-auth" type="submit">Log In</button>
+                        <div id="msg" class="msg"></div>
+                        <p class="auth-small">New here? <a href="signup.html">Create an account</a></p>
+                    </form>
+                </div>
 
-                    <div id="msg" class="msg"></div>
+                <!-- Forgot Password: Step 1 - Enter email -->
+                <div id="forgotSection" style="display: none;">
+                    <p class="login-title">Reset your password</p>
+                    <p class="small muted" style="margin-bottom: 16px;">Enter your email and we'll send you a reset code.</p>
 
-                    <p class="auth-small">New here? <a href="signup.html">Create an account</a></p>
-                </form>
+                    <label for="forgotEmail">Email</label>
+                    <input id="forgotEmail" type="email" placeholder="you@example.com" required>
+
+                    <button id="sendResetBtn" class="btn-auth" type="button">Send Reset Code</button>
+                    <div id="forgotMsg" class="msg"></div>
+
+                    <p class="auth-small"><a href="#" id="backToLoginBtn1">Back to login</a></p>
+                </div>
+
+                <!-- Forgot Password: Step 2 - Enter OTP + new password -->
+                <div id="resetSection" style="display: none;">
+                    <p class="login-title">Enter reset code</p>
+                    <p class="small muted" style="margin-bottom: 16px;">We sent a code to <strong id="resetEmailDisplay"></strong></p>
+
+                    <label for="resetCode">Verification code</label>
+                    <input id="resetCode" type="text" placeholder="123456" maxlength="6"
+                           style="text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: 700;">
+
+                    <label for="newPassword">New password</label>
+                    <input id="newPassword" type="password" placeholder="New password (min 6 chars)" minlength="6">
+
+                    <label for="confirmPassword">Confirm password</label>
+                    <input id="confirmPassword" type="password" placeholder="Confirm new password" minlength="6">
+
+                    <button id="resetPasswordBtn" class="btn-auth" type="button">Reset Password</button>
+                    <div id="resetMsg" class="msg"></div>
+
+                    <p class="auth-small"><a href="#" id="backToLoginBtn2">Back to login</a></p>
+                </div>
             </div>
         </div>
 
         <div class="login-right">
-            <!-- subtle right illustration / mood board -->
             <div class="right-illustration">
                 <img src="assets/pexels-serra-nur-cevikdal-2147703100-32341088.jpg" alt="Boutique storefront" class="illustration">
             </div>
         </div>
     </div>
 
-    <!-- local DB utility must be loaded for login functions -->
-    <script src="local-db-plain.js"></script>
     <script>
-        // login logic (calls local-db-plain.js functions)
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        const API = window.location.origin + '/api';
+        let resetEmail = '';
+
+        function showSection(id) {
+            ['loginSection', 'forgotSection', 'resetSection'].forEach(s => {
+                document.getElementById(s).style.display = s === id ? 'block' : 'none';
+            });
+        }
+
+        // ---- Login ----
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const rawEmail = document.getElementById('email').value;
-            const email = (window.DB && typeof DB.normalizeEmail === 'function') ? DB.normalizeEmail(rawEmail) : (rawEmail || "").trim();
+            const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
             const msgEl = document.getElementById('msg');
+            msgEl.textContent = '';
 
-            // Email validation (show a clear message instead of generic "invalid password")
-            if (window.DB && typeof DB.isValidEmail === 'function') {
-                if (!DB.isValidEmail(email)) {
-                    msgEl.textContent = 'Please enter a valid email address.';
+            try {
+                const resp = await fetch(API + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    msgEl.textContent = data.error || 'Login failed.';
                     msgEl.style.color = '#ff4b5c';
                     return;
                 }
-            }
 
-            // Use DB.login from local-db-plain.js
-            let ok = false;
-            try {
-                if (window.DB && typeof DB.login === 'function') {
-                    ok = DB.login(email, password);
-                } else if (typeof loginUser === 'function') {
-                    ok = loginUser(email, password);
-                } else {
-                    // Fallback: check users array directly
-                    const users = JSON.parse(localStorage.getItem('users') || '[]');
-                    const u = users.find(x => x.email === email && x.password === password);
-                    if (u) {
-                        localStorage.setItem('currentUser', email);
-                        ok = true;
-                    }
-                }
+                localStorage.setItem('currentUser', email);
+                msgEl.textContent = 'Login successful. Redirecting…';
+                msgEl.style.color = '#27AE60';
+                setTimeout(() => window.location.href = 'dashboard.html', 450);
             } catch (err) {
-                console.error('login helper error', err);
+                msgEl.textContent = 'Network error. Make sure the server is running.';
+                msgEl.style.color = '#ff4b5c';
             }
+        });
 
-            if (!ok) {
-                msgEl.textContent = (window.DB && DB.lastError) ? DB.lastError : 'Invalid email or password';
+        // ---- Forgot Password ----
+        document.getElementById('showForgotBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('forgotSection');
+        });
+
+        document.getElementById('backToLoginBtn1').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('loginSection');
+        });
+
+        document.getElementById('backToLoginBtn2').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('loginSection');
+        });
+
+        document.getElementById('sendResetBtn').addEventListener('click', async () => {
+            const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+            const msgEl = document.getElementById('forgotMsg');
+            msgEl.textContent = '';
+
+            if (!email) {
+                msgEl.textContent = 'Please enter your email.';
                 msgEl.style.color = '#ff4b5c';
                 return;
             }
 
-            // success — persist user & open main
-            localStorage.setItem('currentUser', email);
-            msgEl.textContent = 'Login successful. Redirecting…';
-            msgEl.style.color = '#540863';
-            setTimeout(() => window.location.href = 'dashboard.html', 450);
+            const btn = document.getElementById('sendResetBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                const resp = await fetch(API + '/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                });
+                const data = await resp.json();
+
+                resetEmail = email;
+                showSection('resetSection');
+                document.getElementById('resetEmailDisplay').textContent = email;
+                document.getElementById('resetCode').focus();
+            } catch (err) {
+                msgEl.textContent = 'Network error.';
+                msgEl.style.color = '#ff4b5c';
+            }
+            btn.disabled = false;
+            btn.textContent = 'Send Reset Code';
+        });
+
+        // ---- Reset Password ----
+        document.getElementById('resetPasswordBtn').addEventListener('click', async () => {
+            const code = document.getElementById('resetCode').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const msgEl = document.getElementById('resetMsg');
+            msgEl.textContent = '';
+
+            if (code.length !== 6) {
+                msgEl.textContent = 'Please enter the 6-digit code.';
+                msgEl.style.color = '#ff4b5c';
+                return;
+            }
+            if (newPassword.length < 6) {
+                msgEl.textContent = 'Password must be at least 6 characters.';
+                msgEl.style.color = '#ff4b5c';
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                msgEl.textContent = 'Passwords do not match.';
+                msgEl.style.color = '#ff4b5c';
+                return;
+            }
+
+            try {
+                const resp = await fetch(API + '/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: resetEmail, code, newPassword }),
+                });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    msgEl.textContent = data.error || 'Reset failed.';
+                    msgEl.style.color = '#ff4b5c';
+                    return;
+                }
+
+                msgEl.textContent = 'Password reset! Redirecting to login...';
+                msgEl.style.color = '#27AE60';
+                setTimeout(() => showSection('loginSection'), 1500);
+            } catch (err) {
+                msgEl.textContent = 'Network error.';
+                msgEl.style.color = '#ff4b5c';
+            }
+        });
+
+        document.getElementById('resetCode').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('newPassword').focus();
         });
     </script>
 </body>
-
 </html>
