@@ -37,9 +37,13 @@
     // ========================================
     // USER INFO
     // ========================================
-    function fetchUser() {
+    async function fetchUser() {
         if (window.DB && typeof DB.getUser === "function") {
-            userInfo = DB.getUser(currentUser);
+            try {
+                userInfo = await DB.getUser(currentUser);
+            } catch (e) {
+                userInfo = null;
+            }
         }
         if (!userInfo) {
             try {
@@ -51,9 +55,12 @@
         }
     }
 
-    function getWardrobe() {
+    async function getWardrobe() {
         if (window.DB && typeof DB.getWardrobe === "function") {
-            return DB.getWardrobe(currentUser) || [];
+            try {
+                const items = await DB.getWardrobe(currentUser);
+                return items || [];
+            } catch (e) { /* fallback */ }
         }
         return JSON.parse(localStorage.getItem("wardrobe_" + currentUser) || "[]");
     }
@@ -409,9 +416,9 @@
     // ========================================
     // INIT
     // ========================================
-    function init() {
-        fetchUser();
-        wardrobeItems = getWardrobe();
+    async function init() {
+        await fetchUser();
+        wardrobeItems = await getWardrobe();
 
         const RE = window.RecommendationEngine;
         if (RE) {
