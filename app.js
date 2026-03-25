@@ -275,26 +275,27 @@ const floatingToolbar = document.getElementById('floatingToolbar');
                 console.warn('getWardrobeItems: No current user');
                 return [];
             }
-            
+
             try {
                 // Always read from localStorage key "wardrobe_<currentUser>" as primary source
                 const key = 'wardrobe_' + currentUser;
                 const stored = localStorage.getItem(key);
-                
+
                 if (stored) {
                     const items = JSON.parse(stored);
-                    console.log(`getWardrobeItems: Loaded ${items.length} items from localStorage key "${key}"`);
                     return Array.isArray(items) ? items : [];
                 }
-                
-                // Fallback to DB if available and localStorage is empty
+
+                // Fallback: try loading from DB asynchronously and re-render when ready
                 if (window.DB && typeof DB.getWardrobe === 'function') {
-                    const dbItems = DB.getWardrobe(currentUser) || [];
-                    console.log(`getWardrobeItems: Loaded ${dbItems.length} items from DB`);
-                    return Array.isArray(dbItems) ? dbItems : [];
+                    DB.getWardrobe(currentUser).then(function(dbItems) {
+                        if (Array.isArray(dbItems) && dbItems.length > 0) {
+                            localStorage.setItem(key, JSON.stringify(dbItems));
+                            renderWardrobe();
+                        }
+                    }).catch(function() {});
                 }
-                
-                console.log('getWardrobeItems: No items found, returning empty array');
+
                 return [];
             } catch (err) {
                 console.error('getWardrobeItems: Error reading wardrobe items', err);
@@ -642,7 +643,17 @@ floatingToolbar.style.top =
   const key = 'savedOutfits_' + currentUser;
   const outfits = JSON.parse(localStorage.getItem(key) || '[]');
   outfits.unshift(outfit);
-  localStorage.setItem(key, JSON.stringify(outfits));
+  try {
+    localStorage.setItem(key, JSON.stringify(outfits));
+  } catch (e) {
+    // localStorage quota exceeded — still saved to API below
+    console.warn('localStorage quota exceeded for saved outfits:', e.message);
+  }
+
+  // Also sync to API backend if available
+  if (window.ApiClient && typeof ApiClient.saveOutfit === 'function') {
+    ApiClient.saveOutfit(currentUser, outfit.name, outfit.note, outfit.items).catch(() => {});
+  }
 
   renderSavedOutfits();
   alert('Outfit saved successfully!');

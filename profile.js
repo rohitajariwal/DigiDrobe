@@ -50,9 +50,13 @@
         window.location.href = "login.html";
     });
 
-    function fetchUser() {
+    async function fetchUser() {
         if (window.DB && typeof DB.getUser === "function") {
-            userInfo = DB.getUser(currentUser);
+            try {
+                userInfo = await DB.getUser(currentUser);
+            } catch (e) {
+                userInfo = null;
+            }
         }
         if (!userInfo) {
             try {
@@ -64,9 +68,12 @@
         }
     }
 
-    function getWardrobe() {
+    async function getWardrobe() {
         if (window.DB && typeof DB.getWardrobe === "function") {
-            return DB.getWardrobe(currentUser) || [];
+            try {
+                const items = await DB.getWardrobe(currentUser);
+                return items || [];
+            } catch (e) { /* fallback */ }
         }
         const key = "wardrobe_" + currentUser;
         return JSON.parse(localStorage.getItem(key) || "[]");
@@ -498,11 +505,11 @@
         });
     }
 
-    function init() {
-        fetchUser();
+    async function init() {
+        await fetchUser();
         hydrateProfile();
         initProfilePhoto();
-        wardrobeCache = getWardrobe();
+        wardrobeCache = await getWardrobe();
         updateStats();
         updateFilterOptions(wardrobeCache);
         renderWardrobe();

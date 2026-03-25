@@ -232,9 +232,11 @@ function getOutfits(email) {
 }
 
 function saveOutfit(email, name, note, itemsJson) {
-    runSql('INSERT INTO outfits (user_email, name, note, items_json) VALUES (?, ?, ?, ?)', [email.toLowerCase().trim(), name, note || '', itemsJson]);
+    db.run('INSERT INTO outfits (user_email, name, note, items_json) VALUES (?, ?, ?, ?)', [email.toLowerCase().trim(), name, note || '', itemsJson]);
     const row = queryOne('SELECT last_insert_rowid() as id');
-    return row ? row.id : null;
+    const id = row ? row.id : null;
+    saveToDisk();
+    return id;
 }
 
 function deleteOutfit(email, outfitId) {
